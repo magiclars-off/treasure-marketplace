@@ -48,6 +48,7 @@ import { ChainId } from "@usedapp/core";
 import { BridgeworldItems } from "../../../const";
 import * as Popover from "@radix-ui/react-popover";
 import { normalizeBridgeworldTokenMetadata } from "../../../utils/metadata";
+import Metadata from "../../../components/Metadata";
 
 const MAX_ITEMS_PER_PAGE = 42;
 
@@ -765,7 +766,16 @@ const Collection = () => {
     }, {}) ?? {};
 
   return (
-    <main>
+    <div>
+      <Metadata
+        title={
+          collectionData?.collection
+            ? `${collectionData.collection.name} - Collection`
+            : undefined
+        }
+        url={window.location.href}
+      />
+
       <Transition.Root show={mobileFiltersOpen} as={Fragment}>
         <Dialog
           as="div"
@@ -1629,7 +1639,7 @@ const Collection = () => {
           listingsWithoutDuplicates={listingsWithoutDuplicates}
         />
       )}
-    </main>
+    </div>
   );
 };
 

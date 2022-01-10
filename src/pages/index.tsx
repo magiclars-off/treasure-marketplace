@@ -25,6 +25,7 @@ import SmolImg5 from "../../public/img/smolbrains4.png";
 import SmolImg6 from "../../public/img/smolbrains5.png";
 import Link from "next/link";
 import { getCollectionSlugFromName } from "../utils";
+import Metadata from "../components/Metadata";
 
 const ImageWrapper = ({ image }: { image: StaticImageData }) => (
   <Image src={image.src} width={image.width} height={image.height} />
@@ -36,6 +37,7 @@ export default function Home() {
 
   return (
     <div className="relative">
+      <Metadata />
       <main className="flex justify-center items-center w-full min-h-screen landing">
         <div className="flex relative lg:flex-row flex-col-reverse px-8 lg:px-0">
           <div

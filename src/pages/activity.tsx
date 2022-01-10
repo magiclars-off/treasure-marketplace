@@ -6,6 +6,7 @@ import { useQuery } from "react-query";
 import { marketplace } from "../lib/client";
 import Listings from "../components/Listings";
 import { CenterLoadingDots } from "../components/CenterLoadingDots";
+import Metadata from "../components/Metadata";
 
 const Activity = () => {
   const router = useRouter();
@@ -23,6 +24,7 @@ const Activity = () => {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden pt-24">
+      <Metadata url={window.location.href} />
       {isLoading && <CenterLoadingDots className="h-60" />}
       {data?.listings && <Listings listings={data.listings} sort={sortParam} />}
     </div>
