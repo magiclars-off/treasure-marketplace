@@ -3,9 +3,13 @@ import {
   ExternalLinkIcon,
   ChevronRightIcon,
 } from "@heroicons/react/solid";
+import {
+  TagIcon,
+  ShoppingCartIcon,
+} from "@heroicons/react/solid";
 import { Fragment } from "react";
 import { ListingFieldsFragment } from "../../generated/marketplace.graphql";
-import { Menu, Transition } from "@headlessui/react";
+import { Transition } from "@headlessui/react";
 import { formatDistanceToNow } from "date-fns";
 import {
   formatPrice,
@@ -14,29 +18,29 @@ import {
 } from "../utils";
 import { useChainId } from "../lib/hooks";
 import { shortenAddress } from "@yuyao17/corefork";
-import { useRouter } from "next/router";
 import ImageWrapper from "./ImageWrapper";
-import QueryLink from "./QueryLink";
-import classNames from "clsx";
 import { Disclosure } from "@headlessui/react";
 import Link from "next/link";
 import { useQuery } from "react-query";
 import { bridgeworld, client } from "../lib/client";
-
-const sortOptions = [
-  { name: "Highest Price", value: "price" },
-  { name: "Latest", value: "time" },
-];
+import ActivityActions from "./ActivityActions";
 
 const Listings = ({
   listings,
+  salesOnly,
   sort,
 }: {
   listings: ListingFieldsFragment[];
+  salesOnly?: boolean;
   sort: string | string[];
 }) => {
-  const router = useRouter();
   const chainId = useChainId();
+
+  const getStatus = (status: string) => {
+    if (status === "Active") return <TagIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
+    if (status === "Sold") return <ShoppingCartIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
+    return "";
+  };
 
   const tokens = listings
     .filter(
@@ -81,71 +85,14 @@ const Listings = ({
         <div className="pt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="flex justify-between text-2xl font-bold text-gray-900 dark:text-gray-200">
             Activity
-            <section aria-labelledby="filter-heading">
-              <h2 id="filter-heading" className="sr-only">
-                Product filters
-              </h2>
-
-              <div className="flex items-center">
-                <Menu as="div" className="relative z-20 inline-block text-left">
-                  <div>
-                    <Menu.Button className="group inline-flex justify-center text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-200">
-                      Sort
-                      <ChevronDownIcon
-                        className="flex-shrink-0 -mr-1 ml-1 h-5 w-5 text-gray-400 group-hover:text-gray-500 dark:text-gray-400 dark:group-hover:text-gray-100"
-                        aria-hidden="true"
-                      />
-                    </Menu.Button>
-                  </div>
-
-                  <Transition
-                    as={Fragment}
-                    enter="transition ease-out duration-100"
-                    enterFrom="transform opacity-0 scale-95"
-                    enterTo="transform opacity-100 scale-100"
-                    leave="transition ease-in duration-75"
-                    leaveFrom="transform opacity-100 scale-100"
-                    leaveTo="transform opacity-0 scale-95"
-                  >
-                    <Menu.Items className="origin-top-left absolute right-0 z-10 mt-2 w-48 rounded-md shadow-2xl bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 focus:outline-none">
-                      <div className="py-1">
-                        {sortOptions.map((option) => {
-                          const active = option.value === sort;
-                          return (
-                            <Menu.Item key={option.name}>
-                              <QueryLink
-                                href={{
-                                  pathname: router.pathname,
-                                  query: {
-                                    ...router.query,
-                                    activitySort: option.value,
-                                  },
-                                }}
-                                // passHref
-                                className={classNames(
-                                  "block px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-500",
-                                  {
-                                    "text-red-500 dark:text-gray-100": active,
-                                  }
-                                )}
-                              >
-                                <span>{option.name}</span>
-                              </QueryLink>
-                            </Menu.Item>
-                          );
-                        })}
-                      </div>
-                    </Menu.Items>
-                  </Transition>
-                </Menu>
-              </div>
-            </section>
+            <ActivityActions sort={sort} salesOnly={salesOnly} />
           </h1>
 
           <div className="mt-4 hidden lg:block">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 dark:bg-gray-500 sticky top-0">
                 <tr>
+                  <th scope="col" />
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
@@ -237,12 +184,16 @@ const Listings = ({
                           : "bg-gray-50 dark:bg-gray-300"
                       }
                     >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-700">
+                        {getStatus(listing.status)}
+                      </td>
                       <td className="flex items-center px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-700">
                         {metadata?.metadata ? (
                           <ImageWrapper
                             height={48}
                             token={metadata}
                             width={48}
+                            className="min-w-[32px] min-h-[32px]"
                           />
                         ) : (
                           <div className="animate-pulse w-full bg-gray-300 h-12 rounded-md m-auto" />
@@ -271,7 +222,9 @@ const Listings = ({
                         {shortenAddress(listing.seller.id)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-700">
-                        {shortenAddress(listing.buyer?.id ?? "")}
+                        {listing.buyer?.id
+                          ? shortenAddress(listing.buyer.id)
+                          : ""}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-red-500 dark:text-gray-700">
                         <a
@@ -341,6 +294,7 @@ const Listings = ({
                                   height="50%"
                                   token={metadata}
                                   width="60%"
+                                  className="min-w-[32px] min-h-[32px]"
                                 />
                               ) : (
                                 <div className="animate-pulse w-full bg-gray-300 h-48 rounded-md m-auto" />
@@ -362,6 +316,10 @@ const Listings = ({
                                 </span>
                               </span>
                             </span>
+                            {getStatus(listing.status)}
+                            <p className="truncate text-gray-600 font-semibold mr-2">
+                              
+                            </p>
                             {open ? (
                               <ChevronDownIcon
                                 className="flex-shrink-0 h-5 w-5 text-gray-400"
@@ -395,11 +353,19 @@ const Listings = ({
                               <p className="text-xs dark:text-gray-500">
                                 From:
                               </p>
-                              <p>{shortenAddress(listing.seller.id)}</p>
+                              <p>
+                                {listing.buyer?.id
+                                  ? shortenAddress(listing.seller.id)
+                                  : ""}
+                              </p>
                             </div>
                             <div className="sm:px-8 space-y-1">
                               <p className="text-xs dark:text-gray-500">To:</p>
-                              <p>{shortenAddress(listing.buyer?.id ?? "")}</p>
+                              <p>
+                                {listing.buyer?.id
+                                  ? shortenAddress(listing.buyer.id)
+                                  : ""}
+                              </p>
                             </div>
                             <div className="sm:pl-8 space-y-1">
                               <p className="text-xs dark:text-gray-500">

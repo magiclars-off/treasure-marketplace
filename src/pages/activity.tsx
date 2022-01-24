@@ -1,4 +1,4 @@
-import { Listing_OrderBy } from "../../generated/marketplace.graphql";
+import { Listing_OrderBy, Status } from "../../generated/marketplace.graphql";
 
 import { useRouter } from "next/router";
 import { useQuery } from "react-query";
@@ -9,8 +9,10 @@ import { CenterLoadingDots } from "../components/CenterLoadingDots";
 
 const Activity = () => {
   const router = useRouter();
-  const { activitySort } = router.query;
+  const { activitySort, salesOnly } = router.query;
   const sortParam = activitySort ?? "time";
+  const statusFilter: Status[] = [Status.Sold];
+  salesOnly === "false" && statusFilter.push(Status.Active);
 
   const { data, isLoading } = useQuery(["activity", { sortParam }], () =>
     marketplace.getAllActivities({
@@ -18,13 +20,14 @@ const Activity = () => {
         sortParam === "price"
           ? Listing_OrderBy.pricePerItem
           : Listing_OrderBy.blockTimestamp,
+      statusFilter: statusFilter,
     })
   );
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden pt-24">
       {isLoading && <CenterLoadingDots className="h-60" />}
-      {data?.listings && <Listings listings={data.listings} sort={sortParam} />}
+      {data?.listings && <Listings listings={data.listings} salesOnly={salesOnly === "true"} sort={sortParam} />}
     </div>
   );
 };

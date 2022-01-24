@@ -30,6 +30,7 @@ import {
   GetCollectionListingsQuery,
   Listing_OrderBy,
   OrderDirection,
+  Status,
   TokenStandard,
 } from "../../../../generated/marketplace.graphql";
 import classNames from "clsx";
@@ -267,6 +268,7 @@ const Collection = () => {
     sort,
     tab,
     activitySort,
+    salesOnly,
     search,
   } = router.query;
   const formattedSearch = Array.isArray(search) ? search[0] : search;
@@ -282,6 +284,9 @@ const Collection = () => {
 
   const sortParam = sort ?? OrderDirection.asc;
   const activitySortParam = activitySort ?? "time";
+  const statusFilter: Status[] = [Status.Sold];
+  salesOnly === "false" && statusFilter.push(Status.Active);
+  
   const formattedAddress = Array.isArray(slugOrAddress)
     ? slugToAddress(slugOrAddress[0], chainId)
     : slugToAddress(slugOrAddress?.toLowerCase() ?? AddressZero, chainId);
@@ -297,6 +302,7 @@ const Collection = () => {
           activitySortParam === "price"
             ? Listing_OrderBy.pricePerItem
             : Listing_OrderBy.blockTimestamp,
+        statusFilter: statusFilter,
       }),
     {
       enabled: formattedTab === "activity",
@@ -1227,7 +1233,8 @@ const Collection = () => {
             {activityData?.listings && (
               <Listings
                 listings={activityData.listings}
-                sort={activitySortParam}
+                  sort={activitySortParam}
+                  salesOnly={salesOnly === "true"}
               />
             )}
           </>

@@ -169,6 +169,7 @@ const LISTING_FRAGMENT = gql`
     id
     pricePerItem
     quantity
+    status
     seller {
       id
     }
@@ -197,9 +198,9 @@ const LISTING_FRAGMENT_WITH_TOKEN = gql`
 
 export const getActivity = gql`
   ${LISTING_FRAGMENT}
-  query getActivity($id: String!, $orderBy: Listing_orderBy!) {
+  query getActivity($id: String!, $orderBy: Listing_orderBy!, $statusFilter: [Status!]!) {
     listings(
-      where: { status: Sold, collection: $id }
+      where: { status_in: $statusFilter, collection: $id }
       orderBy: $orderBy
       orderDirection: desc
     ) {
@@ -210,8 +211,12 @@ export const getActivity = gql`
 
 export const getAllActivities = gql`
   ${LISTING_FRAGMENT}
-  query getAllActivities($orderBy: Listing_orderBy!) {
-    listings(where: { status: Sold }, orderBy: $orderBy, orderDirection: desc) {
+  query getAllActivities($orderBy: Listing_orderBy!, $statusFilter: [Status!]!) {
+    listings(
+      where: { status_in: $statusFilter }
+      orderBy: $orderBy
+      orderDirection: desc
+    ) {
       ...ListingFields
     }
   }
