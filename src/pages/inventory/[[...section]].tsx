@@ -42,6 +42,7 @@ import { formatEther } from "ethers/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { FEE, USER_SHARE } from "../../const";
 import { TokenStandard } from "../../../generated/queries.graphql";
+import { MagicIcon } from "../../components/Icons";
 
 type DrawerProps = {
   actions: Array<"create" | "remove" | "update">;
@@ -262,15 +263,17 @@ const Drawer = ({
                                     className="text-gray-500 dark:text-gray-400 sm:text-sm"
                                     id="price-currency"
                                   >
-                                    $MAGIC
+                                    <MagicIcon className="inline-flex h-[0.8rem] w-[0.8rem] sm:h-4 sm:w-4 text-red-500 self-end mr-1" />
                                   </span>
                                 </div>
                               </div>
                               <p className="flex text-red-600 text-[0.75rem] mt-1 h-[1rem]">
-                                {priceBelowFloorWarning &&
-                                  `Price is below floor of ${
-                                    statData?.collection?.floorPrice / 10 ** 18
-                                  } $MAGIC`}
+                                  {priceBelowFloorWarning &&
+                                    <Fragment>
+                                      Price is below floor of
+                                      <MagicIcon className="inline-flex h-[0.6rem] w-[0.6rem] text-red-500 self-end ml-1 mr-1" />
+                                      {Math.floor(statData?.collection?.floorPrice / 10 ** 18)}
+                                    </Fragment>}
                               </p>
                             </div>
                             <div>
@@ -450,8 +453,9 @@ const Drawer = ({
                                 Royalties ({FEE * 100 + "%"})
                               </p>
                               <p>
-                                ≈ {formatNumber(parseFloat(price || "0") * FEE)}{" "}
-                                $MAGIC
+                                  ≈
+                                  <MagicIcon className="inline-flex h-[0.6rem] w-[0.6rem] text-red-500 self-end ml-1 mr-1" />
+                                  {formatNumber(parseFloat(price || "0") * FEE)}
                               </p>
                             </div>
                             <div className="flex justify-between px-2">
@@ -459,11 +463,11 @@ const Drawer = ({
                                 Your share ({USER_SHARE * 100 + "%"})
                               </p>
                               <p>
-                                ≈{" "}
+                                ≈
+                                <MagicIcon className="inline-flex h-[0.6rem] w-[0.6rem] text-red-500 self-end ml-1 mr-1" />
                                 {formatNumber(
                                   parseFloat(price || "0") * USER_SHARE
-                                )}{" "}
-                                $MAGIC
+                                )}
                               </p>
                             </div>
                           </div>
@@ -882,10 +886,10 @@ const Inventory = () => {
                           </Link>
                           {pricePerItem && (
                             <p className="dark:text-gray-100">
+                              <MagicIcon className="inline-flex h-[0.8rem] w-[0.8rem] text-red-500 self-end ml-1 mr-1" />
                               {formatNumber(
                                 parseFloat(formatEther(pricePerItem))
-                              )}{" "}
-                              <span className="text-xs font-light">$MAGIC</span>
+                              )}
                             </p>
                           )}
                           {!expires &&

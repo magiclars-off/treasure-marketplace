@@ -57,7 +57,12 @@ import { Contracts } from "../../../const";
 import { targetNftT } from "../../../types";
 import { Tooltip } from "../../../components/Tooltip";
 import { utils } from "ethers";
-import { EthIcon, SwapIcon, UsdIcon } from "../../../components/Icons";
+import {
+  EthIcon,
+  MagicIcon,
+  SwapIcon,
+  UsdIcon,
+} from "../../../components/Icons";
 
 const MAX_ITEMS_PER_PAGE = 10;
 
@@ -544,10 +549,8 @@ export default function Example() {
                     <div className="mt-10">
                       <h2 className="sr-only">Price</h2>
                       <p className="text-3xl text-gray-900 dark:text-gray-300">
+                        <MagicIcon className="inline-flex text-red-500 h-[text-3xl] w-[text-3xl] sm:h-6 sm:w-6 self-end mr-2" />
                         {formatPrice(tokenInfo.lowestPrice[0].pricePerItem)}
-                        <span className="ml-2 text-xs dark:text-gray-400">
-                          $MAGIC
-                        </span>
                       </p>
                       <div className="text-gray-500 text-sm mt-2">
                         ≈{" "}
@@ -1110,9 +1113,9 @@ const timelineContent = (
           {listing.buyer?.id ? shortenIfAddress(listing.buyer.id) : "Unknown"}{" "}
           for{" "}
           <span className="font-medium text-gray-900 dark:text-gray-300">
+            <MagicIcon className="inline-flex h-[0.8rem] w-[0.8rem] mr-1 self-end" />
             {formatPrice(listing.pricePerItem)}
-          </span>{" "}
-          $MAGIC
+          </span>
         </p>
       );
     case Status.Active:
@@ -1120,9 +1123,9 @@ const timelineContent = (
         <p>
           {shortenIfAddress(listing.seller.id)} listed this item for{" "}
           <span className="font-medium text-gray-900 dark:text-gray-300">
+            <MagicIcon className="inline-flex h-[0.8rem] w-[0.8rem] mr-1 self-end" />
             {formatPrice(listing.pricePerItem)}
-          </span>{" "}
-          $MAGIC
+          </span>
         </p>
       );
     case Status.Inactive:
@@ -1361,9 +1364,10 @@ const PurchaseItemModal = ({
 
                 {payload.standard === TokenStandard.ERC1155 && (
                   <div className="flex-1 pt-4 flex items-end justify-between">
-                    <p className="mt-1 text-xs font-medium text-gray-900 dark:text-gray-100">
-                      {formatEther(payload.pricePerItem)} $MAGIC{" "}
-                      <span className="text-[0.5rem] text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs self-center font-medium text-gray-900 dark:text-gray-100">
+                      <MagicIcon className="inline-flex h-[0.8rem] w-[0.8rem] text-red-500 mr-1 self-end" />
+                      {formatEther(payload.pricePerItem)}{" "}
+                      <span className="text-[0.6rem] text-gray-500 dark:text-gray-400">
                         Per Item
                       </span>
                     </p>
@@ -1397,7 +1401,10 @@ const PurchaseItemModal = ({
             <div className="flex items-center justify-between border-t border-gray-200 pt-6">
               <dt className="text-base font-medium">Total</dt>
               <dd className="text-base font-medium text-gray-900 dark:text-gray-100 flex flex-col items-end">
-                <p>{totalPrice} $MAGIC</p>
+                <p>
+                  <MagicIcon className="inline-flex h-[0.8rem] w-[0.8rem] text-red-500 sm:h-4 sm:w-4 mr-1 self-end" />
+                  {totalPrice}
+                </p>
                 <p className="text-gray-500 text-sm mt-1">
                   ≈ <CurrencySwitcher price={totalPrice} />
                 </p>
@@ -1414,7 +1421,9 @@ const PurchaseItemModal = ({
                 loadingText="Approving $MAGIC..."
                 variant="secondary"
               >
-                Approve $MAGIC to purchase this item
+                Approve
+                <MagicIcon className="inline-flex h-[0.8rem] w-[0.8rem] text-red-500 sm:h-4 sm:w-4 ml-1 mr-1 self-end" />
+                to purchase this item
               </Button>
             ) : (
               <>

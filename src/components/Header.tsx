@@ -29,6 +29,7 @@ import Image from "next/image";
 import { WalletConnectConnector } from "@web3-react/walletconnect-connector";
 import { useCollections } from "../lib/hooks";
 import { getCollectionSlugFromName } from "../utils";
+import { MagicIcon } from "./Icons";
 
 const walletconnect = new WalletConnectConnector({
   rpc: {
@@ -155,7 +156,7 @@ const Header = () => {
                       <span className="text-white block">
                         {formatNumber(parseFloat(formatEther(magicBalance)))}
                       </span>{" "}
-                      <span className="text-white block ml-2">$MAGIC</span>
+                      <MagicIcon className="h-[0.8rem] w-[0.8rem] text-white ml-2 sm:h-4 sm:w-4 self-end" />
                     </div>
                     <div className="flex items-center justify-center px-2 sm:px-3 py-2 rounded-lg dark:bg-gray-800 bg-red-600 text-white text-xs sm:text-sm">
                       {shortenAddress(account)}
@@ -255,10 +256,11 @@ const Header = () => {
 
                   <div className="flex-1 flex items-center justify-end">
                     <button
-                      className="text-gray-700 block px-4 py-2 text-sm dark:text-gray-200"
+                      className="text-gray-700 block px-4 py-2 text-sm dark:text-gray-200 border rounded border-red-500"
                       onClick={() => setSushiModalOpen(true)}
                     >
-                      Purchase $MAGIC
+                      Purchase
+                      <MagicIcon className="inline-flex text-red-500 ml-2 h-[1rem] w-[1rem]" />
                     </button>
                     <div className="flex items-center">
                       {account ? (
@@ -269,9 +271,7 @@ const Header = () => {
                                 parseFloat(formatEther(magicBalance))
                               )}
                             </span>{" "}
-                            <span className="text-white block ml-2">
-                              $MAGIC
-                            </span>
+                            <MagicIcon className="inline-flex text-white ml-2 h-[1rem] w-[1rem]" />
                           </div>
                           <div className="flex items-center px-2 sm:px-3 py-2 rounded-lg dark:bg-gray-800 bg-red-600 text-white text-xs sm:text-sm">
                             {shortenAddress(account)}
@@ -286,7 +286,7 @@ const Header = () => {
                         </button>
                       )}
 
-                      <div className="ml-4 flow-root sm:border-l border-gray-200 pl-4 sm:pl-6 text-sm">
+                      <div className="ml-4 flow-root sm:border-l border-gray-200 sm:pl-6 text-sm">
                         <Link href="/activity" passHref>
                           <a className="hover:text-gray-900 text-gray-500 dark:hover:text-gray-200">
                             Activity

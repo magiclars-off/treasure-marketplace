@@ -715,7 +715,7 @@ const Collection = () => {
               <div className="mt-12 overflow-hidden flex flex-col">
                 <dl className="sm:-mx-8 -mt-8 flex divide-x-2">
                   <div className="flex flex-col px-6 sm:px-8 pt-8">
-                    <dt className="order-2 text-[0.4rem] sm:text-base font-medium text-gray-500 dark:text-gray-400 mt-2 sm:mt-4 flex">
+                    <dt className="order-2 text-[0.6rem] sm:text-base font-medium text-gray-500 dark:text-gray-400 mt-2 sm:mt-4 flex">
                       <span className="capsize">Floor Price</span>
                       <button
                         className="inline-flex self-end items-center ml-2"
@@ -735,9 +735,9 @@ const Collection = () => {
                     </dt>
                     <dd className="order-1 text-base font-extrabold text-red-600 dark:text-gray-200 sm:text-3xl flex">
                       {floorCurrency === "eth" ? (
-                        <EthIcon className="h-[0.6rem] w-[0.6rem] sm:h-4 sm:w-4 self-end mr-2" />
+                        <EthIcon className="h-[0.8rem] w-[0.8rem] sm:h-5 sm:w-5 self-end mr-2" />
                       ) : (
-                        <MagicIcon className="h-[0.6rem] w-[0.6rem] sm:h-4 sm:w-4 self-end mr-2" />
+                        <MagicIcon className="h-[0.8rem] w-[0.8rem] sm:h-5 sm:w-5 self-end mr-2" />
                       )}
                       <span className="capsize">
                         {floorCurrency === "eth"
@@ -753,7 +753,7 @@ const Collection = () => {
                     </dd>
                   </div>
                   <div className="flex flex-col px-6 sm:px-8 pt-8">
-                    <dt className="order-2 text-[0.4rem] sm:text-base font-medium text-gray-500 dark:text-gray-400 mt-2 sm:mt-4">
+                    <dt className="order-2 text-[0.6rem] sm:text-base font-medium text-gray-500 dark:text-gray-400 mt-2 sm:mt-4">
                       Total Listings
                     </dt>
                     <dd className="order-1 text-base font-extrabold text-red-600 dark:text-gray-200 sm:text-3xl capsize">
@@ -761,8 +761,9 @@ const Collection = () => {
                     </dd>
                   </div>
                   <div className="flex flex-col px-6 sm:px-8 pt-8">
-                    <dt className="order-2 text-[0.4rem] sm:text-base font-medium text-gray-500 dark:text-gray-400 mt-2 sm:mt-4">
-                      Volume ($MAGIC)
+                    <dt className="order-2 text-[0.6rem] sm:text-base font-medium text-gray-500 dark:text-gray-400 mt-2 sm:mt-4">
+                      Volume
+                      <MagicIcon className="inline-flex h-[0.6rem] w-[0.6rem] sm:h-4 sm:w-4 self-end ml-1" />
                     </dt>
                     <dd className="order-1 text-base font-extrabold text-red-600 dark:text-gray-200 sm:text-3xl capsize">
                       {abbreviatePrice(statData.collection.totalVolume)}
@@ -1113,16 +1114,14 @@ const Collection = () => {
                                     {metadata?.name}
                                   </p>
                                   <p className="dark:text-gray-100 text-sm xl:text-base capsize">
+                                    <MagicIcon className="inline-flex h-[0.8rem] w-[0.8rem] text-red-500 self-end mr-1" />
                                     {formatNumber(
                                       parseFloat(
                                         formatEther(
                                           token?.listings?.[0]?.pricePerItem
                                         )
                                       )
-                                    )}{" "}
-                                    <span className="text-[0.5rem] xl:text-xs font-light">
-                                      $MAGIC
-                                    </span>
+                                    )}
                                   </p>
                                   <p className="text-xs text-[0.6rem] ml-auto whitespace-nowrap">
                                     <span className="text-gray-500 dark:text-gray-400">
@@ -1187,14 +1186,12 @@ const Collection = () => {
                                     {metadata?.name}
                                   </p>
                                   <p className="dark:text-gray-100 text-sm xl:text-base capsize">
+                                    <MagicIcon className="inline-flex h-[0.8rem] w-[0.8rem] text-red-500 self-start mr-1" />
                                     {formatNumber(
                                       parseFloat(
                                         formatEther(listing.pricePerItem)
                                       )
-                                    )}{" "}
-                                    <span className="text-[0.5rem] xl:text-xs font-light">
-                                      $MAGIC
-                                    </span>
+                                    )}
                                   </p>
                                 </div>
                               </li>
@@ -1294,7 +1291,9 @@ const DetailedFloorPriceModal = ({
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                       >
-                        Floor Price ($MAGIC)
+                        Floor Price (
+                        <MagicIcon className="h-[0.6rem] w-[0.6rem] sm:h-4 sm:w-4" />
+                        )
                       </th>
                     </tr>
                   </thead>

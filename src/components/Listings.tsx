@@ -22,6 +22,7 @@ import { Disclosure } from "@headlessui/react";
 import Link from "next/link";
 import { useQuery } from "react-query";
 import { bridgeworld, client } from "../lib/client";
+import { MagicIcon } from "./Icons";
 
 const sortOptions = [
   { name: "Highest Price", value: "price" },
@@ -156,7 +157,7 @@ const Listings = ({
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                   >
-                    Price ($MAGIC)
+                    Price (<MagicIcon className="inline-flex h-[0.6rem] w-[0.6rem]" />)
                   </th>
                   <th
                     scope="col"
@@ -355,10 +356,10 @@ const Listings = ({
                                   {metadata?.name ?? ""}
                                 </span>
                                 <span>
+                                  <MagicIcon className="inline-flex h-[0.8rem] w-[0.8rem] text-red-500 mr-1 self-end" />
                                   <span className="text-gray-900 font-medium">
                                     {formatPrice(listing.pricePerItem)}
-                                  </span>{" "}
-                                  $MAGIC
+                                  </span>
                                 </span>
                               </span>
                             </span>
