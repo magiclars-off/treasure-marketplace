@@ -85,7 +85,7 @@ const Drawer = ({
         ]
       : dates[3]
   );
-  const [floorDifference, setFloorDifference] = useState(0);
+  const [priceBelowFloor, setPriceBelowFloor] = useState(false);
   const [show, toggle] = useReducer((value) => !value, true);
 
   const approveContract = useApproveContract(nft.address, nft.standard);
@@ -225,19 +225,6 @@ const Drawer = ({
                                   min="0"
                                   autoComplete="off"
                                   aria-describedby="price-currency"
-                                  onBlur={() => {
-                                    const floor =
-                                      statData?.collection?.floorPrice /
-                                      10 ** 18;
-                                    const diff = Math.floor(
-                                      (100 * (Number(price) - floor)) / floor
-                                    );
-
-                                    // Only set diff value when price is below floor (smaller than 0)
-                                    setFloorDifference(
-                                      diff < 0 ? Math.abs(diff) : 0
-                                    );
-                                  }}
                                   onChange={(event) => {
                                     const { value, maxLength } = event.target;
                                     const price = value.slice(0, maxLength);
@@ -245,6 +232,11 @@ const Drawer = ({
                                       price !== ""
                                         ? String(Math.abs(parseFloat(price)))
                                         : ""
+                                    );
+                                    setPriceBelowFloor(
+                                      Number(price) <
+                                        statData?.collection?.floorPrice /
+                                          10 ** 18
                                     );
                                   }}
                                   value={price}
@@ -259,39 +251,12 @@ const Drawer = ({
                                   </span>
                                 </div>
                               </div>
-                              <div
-                                className={classNames(
-                                  "space-y-1 mt-2 text-[0.5rem]",
-                                  {
-                                    "opacity-75": isFormDisabled,
-                                  }
-                                )}
-                              >
-                                <div className="flex justify-between px-2">
-                                  <p className="text-gray-400">
-                                    Royalties ({FEE * 100 + "%"})
-                                  </p>
-                                  <p>
-                                    ≈{" "}
-                                    {formatNumber(
-                                      parseFloat(price || "0") * FEE
-                                    )}{" "}
-                                    $MAGIC
-                                  </p>
-                                </div>
-                                <div className="flex justify-between px-2">
-                                  <p className="text-gray-400">
-                                    Your share ({USER_SHARE * 100 + "%"})
-                                  </p>
-                                  <p>
-                                    ≈{" "}
-                                    {formatNumber(
-                                      parseFloat(price || "0") * USER_SHARE
-                                    )}{" "}
-                                    $MAGIC
-                                  </p>
-                                </div>
-                              </div>
+                              <p className="flex text-red-600 text-[0.75rem] mt-1 h-[1rem]">
+                                {priceBelowFloor &&
+                                  `Price is below floor of ${
+                                    statData?.collection?.floorPrice / 10 ** 18
+                                  } $MAGIC`}
+                              </p>
                             </div>
                             <div>
                               <Listbox
@@ -457,6 +422,36 @@ const Drawer = ({
                             )}
                           </div>
 
+                          <div
+                            className={classNames(
+                              "space-y-1 mt-2 text-[0.75rem]",
+                              {
+                                "opacity-75": isFormDisabled,
+                              }
+                            )}
+                          >
+                            <div className="flex justify-between px-2">
+                              <p className="text-gray-400">
+                                Royalties ({FEE * 100 + "%"})
+                              </p>
+                              <p>
+                                ≈ {formatNumber(parseFloat(price || "0") * FEE)}{" "}
+                                $MAGIC
+                              </p>
+                            </div>
+                            <div className="flex justify-between px-2">
+                              <p className="text-gray-400">
+                                Your share ({USER_SHARE * 100 + "%"})
+                              </p>
+                              <p>
+                                ≈{" "}
+                                {formatNumber(
+                                  parseFloat(price || "0") * USER_SHARE
+                                )}{" "}
+                                $MAGIC
+                              </p>
+                            </div>
+                          </div>
                           <div>
                             {actions.map((action, idx) => {
                               switch (action) {
@@ -545,9 +540,6 @@ const Drawer = ({
                               }
                             })}
                           </div>
-                          {floorDifference > 10 && (
-                            <p className="flex justify-center text-red-700 font-bold">{`WARNING: ${floorDifference}% below floorpice`}</p>
-                          )}
                         </>
                       )}
                     </div>
