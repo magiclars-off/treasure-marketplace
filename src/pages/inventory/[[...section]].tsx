@@ -210,7 +210,7 @@ const Drawer = ({
                                 className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                               >
                                 Price
-                                {nft.standard === TokenStandard.Erc1155
+                                {nft.standard === TokenStandard.ERC1155
                                   ? " Per Item"
                                   : ""}
                               </label>
@@ -340,7 +340,7 @@ const Drawer = ({
                                 </div>
                               </Listbox>
                             </div>
-                            {nft.standard === TokenStandard.Erc1155 && (
+                            {nft.standard === TokenStandard.ERC1155 && (
                               <div>
                                 <Listbox
                                   value={quantity}
@@ -772,7 +772,7 @@ const Inventory = () => {
                               !pricePerItem &&
                               quantity &&
                               token.collection.standard ===
-                                TokenStandard.Erc1155 && (
+                                TokenStandard.ERC1155 && (
                                 <span className="text-gray-600 text-xs text-[0.6rem]">
                                   <span className="text-gray-500 dark:text-gray-400">
                                     Quantity:
@@ -808,7 +808,7 @@ const Inventory = () => {
                               pricePerItem &&
                               quantity &&
                               token.collection.standard ===
-                                TokenStandard.Erc1155 && (
+                                TokenStandard.ERC1155 && (
                                 <span className="text-gray-600 text-xs text-[0.6rem]">
                                   <span className="text-gray-500 dark:text-gray-400">
                                     Quantity:
@@ -822,7 +822,7 @@ const Inventory = () => {
                           {expires &&
                             quantity &&
                             token.collection.standard ===
-                              TokenStandard.Erc1155 && (
+                              TokenStandard.ERC1155 && (
                               <div className="flex mt-1 justify-end">
                                 <span className="text-gray-600 text-xs text-[0.6rem]">
                                   <span className="text-gray-500 dark:text-gray-400">
