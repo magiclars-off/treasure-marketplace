@@ -85,7 +85,7 @@ const Drawer = ({
         ]
       : dates[3]
   );
-  const [priceBelowFloor, setPriceBelowFloor] = useState(false);
+  const [priceBelowFloorWarning, setPriceBelowFloorWarning] = useState(false);
   const [show, toggle] = useReducer((value) => !value, true);
 
   const approveContract = useApproveContract(nft.address, nft.standard);
@@ -228,16 +228,19 @@ const Drawer = ({
                                   onChange={(event) => {
                                     const { value, maxLength } = event.target;
                                     const price = value.slice(0, maxLength);
+                                    const emptyPrice = price === "";
                                     setPrice(
-                                      price !== ""
-                                        ? String(Math.abs(parseFloat(price)))
-                                        : ""
+                                      emptyPrice
+                                        ? ""
+                                        : String(Math.abs(parseFloat(price)))
                                     );
-                                    setPriceBelowFloor(
+
+                                    const warning =
+                                      !emptyPrice &&
                                       Number(price) <
                                         statData?.collection?.floorPrice /
-                                          10 ** 18
-                                    );
+                                          10 ** 18;
+                                    setPriceBelowFloorWarning(warning);
                                   }}
                                   value={price}
                                   disabled={isFormDisabled}
@@ -252,7 +255,7 @@ const Drawer = ({
                                 </div>
                               </div>
                               <p className="flex text-red-600 text-[0.75rem] mt-1 h-[1rem]">
-                                {priceBelowFloor &&
+                                {priceBelowFloorWarning &&
                                   `Price is below floor of ${
                                     statData?.collection?.floorPrice / 10 ** 18
                                   } $MAGIC`}
