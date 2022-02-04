@@ -12,7 +12,7 @@ const Activity = () => {
   const { activitySort, salesOnly } = router.query;
   const sortParam = activitySort ?? "time";
   const statusFilter: Status[] = [Status.Sold];
-  salesOnly === "false" && statusFilter.push(Status.Active);
+  salesOnly !== "true" && statusFilter.push(Status.Active);
 
   const { data, isLoading } = useQuery(["activity", { sortParam }], () =>
     marketplace.getAllActivities({
