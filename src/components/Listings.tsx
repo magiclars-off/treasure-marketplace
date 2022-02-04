@@ -345,11 +345,11 @@ const Listings = ({
                               href={`/collection/${slugOrAddress}/${listing.token.tokenId}`}
                               passHref
                             >
-                              <a className="text-red-500 hover:text-red-700 dark:text-gray-200 dark:hover:text-gray-300 text-sm flex items-center space-x-1">
+                              <a className="text-red-500 hover:text-red-700 dark:text-gray-200 dark:hover:text-gray-300 text-sm flex items-center space-x-1 sm:pr-8">
                                 View item
                               </a>
                             </Link>
-                            <div className="space-y-1 sm:pr-8">
+                            <div className="space-y-1 sm:pr-8 sm:pl-8">
                               <p className="text-xs dark:text-gray-500">
                                 From:
                               </p>
