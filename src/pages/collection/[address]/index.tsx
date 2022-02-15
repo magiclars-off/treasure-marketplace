@@ -1611,6 +1611,7 @@ const Collection = () => {
             {activityData?.listings && (
               <Listings
                 listings={activityData.listings}
+                title="Activity"
                 sort={activitySortParam}
               />
             )}
