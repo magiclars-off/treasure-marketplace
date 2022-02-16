@@ -32,14 +32,14 @@ const sortOptions = [
   { name: "Latest", value: "time" },
 ];
 
-interface ListingInterface {
+type ListingProps = {
   listings: ListingFieldsFragment[];
   sort: string | string[];
   title?: string;
   includeStatus?: boolean;
-}
+};
 
-const Listings: FC<ListingInterface> = ({
+const Listings: FC<ListingProps> = ({
   listings,
   sort,
   title,
@@ -419,12 +419,13 @@ const Listings: FC<ListingInterface> = ({
                                 </span>
                               </span>
                             </span>
-                            {includeStatus &&
-                            getListingStatus(listing) === "Sold" ? (
-                              <ShoppingCartIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
-                            ) : (
-                              <CurrencyDollarIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
-                            )}
+                            {includeStatus ? (
+                              getListingStatus(listing) === "Sold" ? (
+                                <ShoppingCartIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
+                              ) : (
+                                <CurrencyDollarIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
+                              )
+                            ) : null}
                             {open ? (
                               <ChevronDownIcon
                                 className="flex-shrink-0 h-5 w-5 text-gray-400"
