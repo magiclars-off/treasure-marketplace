@@ -1299,17 +1299,22 @@ const Collection = () => {
                         </Menu.Items>
                       </Transition>
                     </Menu>
-                    <button
-                      type="button"
-                      className="hidden lg:p-2 lg:m-2 lg:text-gray-400 lg:hover:text-gray-500 lg:flex"
-                      onClick={() => setToggleGrid(!toggleGrid)}
-                    >
-                      {toggleGrid ? (
-                        <LargeGridIcon aria-hidden="true" />
-                      ) : (
-                        <ViewGridIcon className="w-5 h-5" aria-hidden="true" />
-                      )}
-                    </button>
+                    {attributeFilterList && (
+                      <button
+                        type="button"
+                        className="hidden lg:p-2 lg:m-2 lg:text-gray-400 lg:hover:text-gray-500 lg:flex"
+                        onClick={() => setToggleGrid(!toggleGrid)}
+                      >
+                        {toggleGrid ? (
+                          <LargeGridIcon aria-hidden="true" />
+                        ) : (
+                          <ViewGridIcon
+                            className="w-5 h-5"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </button>
+                    )}
                   </div>
                 )}
               </section>
@@ -1331,7 +1336,7 @@ const Collection = () => {
                     role="list"
                     className={classNames(
                       `grid grid-cols-2 gap-y-10 sm:grid-cols-4 lg:grid-cols-${
-                        toggleGrid ? 8 : 6
+                        toggleGrid ? 6 : 4
                       } gap-x-6 xl:gap-x-8`,
                       {
                         "lg:grid-cols-4": attributeFilterList,
@@ -1573,7 +1578,7 @@ const Collection = () => {
                                   </span>
                                 </p>
                                 {legionStats?.summons ? (
-                                  <p className="xl:text-xs text-[0.5rem] ml-auto whitespace-nowrap">
+                                  <p className="xl:text-[0.6rem] text-[0.5rem] ml-auto whitespace-nowrap">
                                     <span className="text-gray-500 dark:text-gray-400">
                                       Summoned:
                                     </span>{" "}
