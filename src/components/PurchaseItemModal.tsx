@@ -74,7 +74,7 @@ export const PurchaseItemModal = ({
               className="flex flex-col sm:flex-row py-6 px-4 sm:px-6"
             >
               <div className="flex-shrink-0">
-                {/* <ImageWrapper
+                <ImageWrapper
                   height="50%"
                   token={{
                     name: targetNft.metadata?.name,
@@ -88,7 +88,7 @@ export const PurchaseItemModal = ({
                         : null,
                   }}
                   width="50%"
-                /> */}
+                />
               </div>
 
               <div className="sm:ml-6 sm:space-y-0 mt-2 sm:mt-0 space-y-2 flex-1 flex flex-col">

@@ -535,9 +535,9 @@ export default function TokenDetail() {
                                   isOpen: true,
                                   targetNft: {
                                     metadata: {
-                                      image: metadata?.image ?? "",
-                                      name: metadata?.name ?? "",
-                                      description: metadata?.description ?? "",
+                                      image: metadata.image ?? "",
+                                      name: metadata.name ?? "",
+                                      description: metadata.description ?? "",
                                     },
                                     payload: {
                                       ...tokenInfo.lowestPrice[0],
