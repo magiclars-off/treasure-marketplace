@@ -1084,7 +1084,7 @@ const Inventory = () => {
                             );
                             const swMetadata =
                               smithoniaWeaponsMetadata.data?.find(
-                                (item) => item.id === token.id
+                                (item) => item.id === token.tokenId
                               );
 
                             const metadata = bwMetadata
