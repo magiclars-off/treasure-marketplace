@@ -59,7 +59,7 @@ export const BATTLEFLY_METADATA = {
 
 export const SMITHONIA_WEAPONS_METADATA = {
   name: "Smithonia Weapon",
-  description: "",
+  description: "Smithonia Weapons",
   image:
     "https://bafkreibzmyesy7amoir273ckdcnpndkaz4b3ljdpc6lgexv2abzfnuieq4.ipfs.nftstorage.link/",
   attributes: [],
