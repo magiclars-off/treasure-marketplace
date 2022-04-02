@@ -1385,7 +1385,15 @@ const Collection = () => {
                             normalizedLegion ?? realmStats ?? elleriaStats;
 
                           return (
-                            <li key={listing.id} className="group">
+                            <li key={listing.id} className="group relative">
+                              <Link
+                                href={`/collection/${slugOrAddress}/${listing.token.tokenId}`}
+                                passHref
+                              >
+                                <a className="absolute inset-0 w-full h-full">
+                                  <span className="sr-only">View Details</span>
+                                </a>
+                              </Link>
                               <div className="block w-full aspect-w-1 aspect-h-1 rounded-sm overflow-hidden focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-gray-100 focus-within:ring-red-500">
                                 {metadata ? (
                                   <>
