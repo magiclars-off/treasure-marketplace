@@ -14,6 +14,7 @@ import {
   BridgeworldItems,
   Contracts,
   METADATA_COLLECTIONS,
+  SMITHONIA_WEAPONS_METADATA,
   smolverseItems,
 } from "../const";
 import { Interface } from "@ethersproject/abi";
@@ -612,7 +613,13 @@ export function useSmithoniaWeaponsMetadata(input: string[]) {
       enabled: tokenId.length > 0,
       refetchInterval: false as const,
       keepPreviousData: true,
-      // initialData,
+      initialData: {
+        ...SMITHONIA_WEAPONS_METADATA,
+        name: `${SMITHONIA_WEAPONS_METADATA.name} #${parseInt(
+          tokenId.slice(45),
+          16
+        )}`,
+      },
       select: (value: Metadata) => [
         {
           ...value,
