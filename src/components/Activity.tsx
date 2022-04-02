@@ -342,7 +342,7 @@ export function Activity({ title, includeStatus }: ListingProps) {
                     (item) => item.id === activity.token.id
                   );
                   const swMetadata = smithoniaWeaponsMetadata.data?.find(
-                    (item) => item.id === activity.token.id
+                    (item) => item.id === activity.token.tokenId
                   );
                   const shrdMetadata = sharedMetadata?.tokens.find(
                     (item) => item.id === activity.token.id
@@ -545,7 +545,7 @@ export function Activity({ title, includeStatus }: ListingProps) {
                 (item) => item.id === activity.token.id
               );
               const swMetadata = smithoniaWeaponsMetadata.data?.find(
-                (item) => item.id === activity.token.id
+                (item) => item.id === activity.token.tokenId
               );
               const shrdMetadata = sharedMetadata?.tokens.find(
                 (item) => item.id === activity.token.id
