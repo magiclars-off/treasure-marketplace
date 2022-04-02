@@ -616,15 +616,7 @@ export function useSmithoniaWeaponsMetadata(input: string[]) {
       select: (value: Metadata) => [
         {
           ...value,
-          id:
-            input.find((item) =>
-              item.endsWith(
-                `-0x${parseInt(
-                  value.name.replace("Smithonia Weapon #", ""),
-                  16
-                )}`
-              )
-            ) ?? "",
+          id: value.name.replace("Smithonia Weapon #", ""),
         },
       ],
     }))

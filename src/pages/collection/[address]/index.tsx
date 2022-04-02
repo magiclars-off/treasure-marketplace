@@ -1135,8 +1135,9 @@ const Collection = () => {
                             (item) => item.id === listing.token.id
                           );
                           const swMetadata = smithoniaMetadata.data?.find(
-                            (item) => item.id === listing.token.id
+                            (item) => item.id === listing.token.tokenId
                           );
+
                           const legionsMetadata = isBridgeworldItem
                             ? bridgeworldMetadata.data?.tokens.find(
                                 (item) => item.id === listing.token.id
