@@ -600,44 +600,37 @@ export function useFoundersMetadata(input: string[]) {
 }
 
 export function useSmithoniaWeaponsMetadata(input: string[]) {
-  return useQueries(
-    input.map((tokenId) => ({
-      queryKey: ["smithonia-weapons-metadata", tokenId],
-      queryFn: () =>
-        fetch(
-          `${process.env.NEXT_PUBLIC_SMITHONIA_WEAPONS_API}/${parseInt(
-            tokenId.slice(45),
-            16
-          )}`
-        ).then((res) => res.json()),
-      enabled: tokenId.length > 0,
-      refetchInterval: false as const,
+  const initialData = useCallback(() => {
+    if (input.length === 0) {
+      return undefined;
+    }
+
+    return input.map((id) => ({
+      ...SMITHONIA_WEAPONS_METADATA,
+      id: `${parseInt(id.slice(45), 16)}`,
+      name: `${SMITHONIA_WEAPONS_METADATA.name} #${parseInt(id.slice(45), 16)}`,
+    }));
+  }, [input]);
+
+  return useQuery(
+    ["smithonia-weapons-metadata", input],
+    () =>
+      fetch(
+        `${process.env.NEXT_PUBLIC_SMITHONIA_WEAPONS_API}/metadata?id=${input
+          .map((tokenId) => parseInt(tokenId.slice(45), 16))
+          .join(",")}`
+      ).then((res) => res.json()),
+    {
+      enabled: input.filter(Boolean).length > 0,
+      refetchInterval: false,
       keepPreviousData: true,
-      initialData: {
-        ...SMITHONIA_WEAPONS_METADATA,
-        name: `${SMITHONIA_WEAPONS_METADATA.name} #${parseInt(
-          tokenId.slice(45),
-          16
-        )}`,
-      },
-      select: (value: Metadata) => [
-        {
+      initialData,
+      select: (values: Metadata[]) =>
+        values.map((value) => ({
           ...value,
           id: value.name.replace("Smithonia Weapon #", ""),
-        },
-      ],
-    }))
-  ).reduce<{ data: Metadata[]; isLoading: boolean }>(
-    (acc, query) => {
-      if (query.data) {
-        acc.data.push(...query.data);
-      }
-
-      acc.isLoading = query.isLoading;
-
-      return acc;
-    },
-    { data: [], isLoading: false }
+        })),
+    }
   );
 }
 
