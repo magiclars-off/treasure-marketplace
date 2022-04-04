@@ -1043,7 +1043,7 @@ const Collection = () => {
                   <ul
                     role="list"
                     className={classNames(
-                      `grid sm:grid-cols-2 gap-y-10 md:grid-cols-4 2xl:grid-cols-${
+                      `grid grid-cols-2 gap-y-10 sm:grid-cols-4 2xl:grid-cols-${
                         toggleGrid ? 6 : 4
                       } gap-x-6 xl:gap-x-8`,
                       {

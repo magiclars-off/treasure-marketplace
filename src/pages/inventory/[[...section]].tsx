@@ -1047,7 +1047,7 @@ const Inventory = () => {
                         <ul
                           role="list"
                           className={classNames(
-                            "grid grid-cols-1 gap-y-10 sm:grid-cols-2 gap-x-6 xl:gap-x-8",
+                            "grid grid-cols-2 gap-y-10 md:grid-cols-4 gap-x-6 xl:gap-x-8",
                             section === ""
                               ? toggleGrid
                                 ? "lg:grid-cols-6"
