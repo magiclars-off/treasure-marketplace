@@ -918,7 +918,7 @@ export function useMetadata(
       : isBattleflyItem
       ? !battleflyMetadataResult.isLoading && !!battleflyMetadataResult.data
       : isFoundersItem
-      ? !battleflyMetadataResult.isLoading && !!battleflyMetadataResult.data
+      ? !foundersMetadataResult.isLoading && !!foundersMetadataResult.data
       : isSmithonia
       ? !smithoniaMetadataResult.isLoading && !!smithoniaMetadataResult.data
       : !legacyMetadataResult.isLoading && !!legacyMetadataResult.data && !!id
