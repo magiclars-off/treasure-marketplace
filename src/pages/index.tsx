@@ -5,6 +5,29 @@ import Link from "next/link";
 
 const collections = [
   {
+    href: "smithonia-weapons",
+    name: "Smithonia Weapons",
+    image:
+      "https://ipfs.io/ipfs/bafkreibzmyesy7amoir273ckdcnpndkaz4b3ljdpc6lgexv2abzfnuieq4",
+    description:
+      "Smithonia is a SmithyDAO project. It's a world of staking and adventure which supports a hybrid economy where the primary objective of the game is to build the rarity of your weapon through gameplay.",
+  },
+  {
+    href: "tales-of-elleria",
+    name: "Tales of Elleria",
+    image:
+      "https://ipfs.io/ipfs/Qmd66PRkYUWN78VUSzYyxmZeP4zLpC8Wroif3QNCyofvj7",
+    description:
+      "Tales of Elleria is an immersive three-dimensional role-playing GameFi project. Summon heroes, take on assignments, go on quests and epic adventures to battle dangerous monsters earn tremendous rewards.",
+  },
+  {
+    href: "realm",
+    name: "Realm",
+    image: "/img/realm.png",
+    description:
+      "Realm is a decentralized world-building experience. Enjoy $MAGIC emissions and Loot from across the Metaverse.",
+  },
+  {
     href: "battlefly",
     name: "BattleFly",
     image:
@@ -122,13 +145,13 @@ export default function Home() {
         <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:max-w-7xl lg:px-8">
           <h2 className="sr-only">Collections</h2>
 
-          <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8">
+          <div className="grid gap-4 grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8">
             {collections.map((product) => (
               <div
                 key={product.href}
                 className="group relative bg-white dark:bg-gray-500 border border-gray-200 dark:border-gray-600 rounded-lg flex flex-col overflow-hidden"
               >
-                <div className="relative aspect-w-3 aspect-h-3 bg-gray-200 group-hover:opacity-75 sm:aspect-none">
+                <div className="relative aspect-none bg-gray-200 group-hover:opacity-75">
                   <Image
                     src={product.image}
                     alt={product.name}
