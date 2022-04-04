@@ -490,9 +490,9 @@ const Collection = () => {
       queryFn: () => {
         const onlyNumbers = value[0].replace(/[^\d]+/g, "");
         const isNumber = onlyNumbers !== "";
+        const number = Number(onlyNumbers);
         const filter = {
-          value_gte: isNumber ? onlyNumbers : undefined,
-          value_in: isNumber ? undefined : value,
+          value_in: isNumber ? range(number, number <= 100 ? 101 : 446) : value,
         };
 
         return metadata.getFilteredTokens({
