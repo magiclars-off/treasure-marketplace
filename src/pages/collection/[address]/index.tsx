@@ -244,22 +244,6 @@ const Collection = () => {
       }),
     {
       enabled: !!formattedAddress,
-      select: (data) => {
-        // Somehow Realm supply got doubled
-        if (isRealm) {
-          const items = (data.collection?.stats.items ?? 1) / 2;
-
-          return {
-            ...data,
-            collection: {
-              ...data.collection,
-              stats: { ...data.collection?.stats, items },
-            },
-          } as typeof data;
-        }
-
-        return data;
-      },
     }
   );
 
