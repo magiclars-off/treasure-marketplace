@@ -1134,9 +1134,11 @@ const Collection = () => {
                           const fsMetadata = foundersMetadata.data?.find(
                             (item) => item.id === listing.token.id
                           );
-                          const swMetadata = smithoniaMetadata.data?.find(
-                            (item) => item.id === listing.token.tokenId
-                          );
+                          const swMetadata = isSmithonia
+                            ? smithoniaMetadata.data?.find(
+                                (item) => item.id === listing.token.tokenId
+                              )
+                            : null;
 
                           const legionsMetadata = isBridgeworldItem
                             ? bridgeworldMetadata.data?.tokens.find(
