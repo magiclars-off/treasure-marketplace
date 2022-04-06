@@ -146,6 +146,8 @@ const removeFilter = (
   return new URLSearchParams(combined).toString();
 };
 
+const getNumber = (value: string) => Number(value.replace(/[^\d]+/g, ""));
+const isNumber = (value: string) => value.replace(/[^\d]+/g, "").length > 0;
 const unique = <T,>(array: T[]) => Array.from(new Set(array));
 
 const reduceAttributes = (
@@ -392,10 +394,14 @@ export function Filters() {
           (attributeKey: keyof typeof attributeFilterList) => {
             const attributes = attributeFilterList[attributeKey]?.sort(
               (left: { value: string }, right: { value: string }) => {
-                const leftNumber = Number(left.value.replace(/[^\d]+/g, ""));
-                const rightNumber = Number(right.value.replace(/[^\d]+/g, ""));
+                const leftNumber = isNumber(left.value)
+                  ? getNumber(left.value)
+                  : null;
+                const rightNumber = isNumber(right.value)
+                  ? getNumber(right.value)
+                  : null;
 
-                if (isNaN(leftNumber) || isNaN(rightNumber)) {
+                if (!leftNumber || !rightNumber) {
                   return left.value.localeCompare(right.value);
                 }
 
