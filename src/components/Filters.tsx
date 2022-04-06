@@ -47,6 +47,7 @@ const FATIGUE = ["Yes", "No"];
 const SUMMONS = ["0", "1", "2"];
 const BOOST = ["0.05", "0.1", "0.25", "0.5", "0.75", "1.0", "2.0", "6.0"];
 const LEVELS = ["1", "2", "3", "4", "5", "6"];
+const RANKS = [...LEVELS, "7"];
 const XPS = Array(20)
   .fill("")
   .map((_, index) => `>= ${index * 10}`);
@@ -298,13 +299,24 @@ export function useFiltersList() {
             value: formatPercent(value),
             percentage: null,
           })),
+          ...["Dark", "Earth", "Fire", "Light", "Water", "Wind"].reduce(
+            (acc, key) => {
+              acc[`Constellation: ${key}`] = RANKS.map((value) => ({
+                value: `>= ${value}`,
+                percentage: null,
+              }));
+
+              return acc;
+            },
+            {}
+          ),
           "Crafting Level": LEVELS.map((value) => ({
-            value,
+            value: `>= ${value}`,
             percentage: null,
           })),
           "Crafting XP": XPS.map((value) => ({ value, percentage: null })),
           "Questing Level": LEVELS.map((value) => ({
-            value,
+            value: `>= ${value}`,
             percentage: null,
           })),
           "Questing XP": XPS.map((value) => ({ value, percentage: null })),

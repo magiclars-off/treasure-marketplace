@@ -132,6 +132,42 @@ export function normalizeBridgeworldTokenMetadata(
           value: formatNumber(Number(metadata.summons.toString())),
         },
       },
+      {
+        attribute: {
+          name: "Contstellation: Dark",
+          value: metadata.constellation?.dark ?? 0,
+        },
+      },
+      {
+        attribute: {
+          name: "Contstellation: Earth",
+          value: metadata.constellation?.earth ?? 0,
+        },
+      },
+      {
+        attribute: {
+          name: "Contstellation: Fire",
+          value: metadata.constellation?.fire ?? 0,
+        },
+      },
+      {
+        attribute: {
+          name: "Contstellation: Light",
+          value: metadata.constellation?.light ?? 0,
+        },
+      },
+      {
+        attribute: {
+          name: "Contstellation: Water",
+          value: metadata.constellation?.water ?? 0,
+        },
+      },
+      {
+        attribute: {
+          name: "Contstellation: Wind",
+          value: metadata.constellation?.wind ?? 0,
+        },
+      },
     ];
   } else if (metadata?.__typename === "TreasureInfo") {
     tokenMetadata.description = "Treasures";

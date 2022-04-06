@@ -332,10 +332,40 @@ const Collection = () => {
   );
   const filteredBridgeworldTokens = useQuery(
     ["bw-filtered-tokens", listedTokens.data, filters],
-    () =>
-      bridgeworld.getFilteredLegions({
-        filters: {
-          id_in: listedTokens.data?.map((id) => `${id}-metadata`),
+    () => {
+      const keys = Object.keys(filters);
+      const isConstellation = keys.some((key) =>
+        key.startsWith("Constellation: ")
+      );
+      const isLegionInfo =
+        keys.filter((key) => !key.startsWith("Constellation: ")).length > 0;
+
+      return bridgeworld.getFilteredLegions({
+        constellation: {
+          id_in: isConstellation ? listedTokens.data : [],
+          ...Object.entries(filters).reduce((acc, [key, [value]]) => {
+            switch (key) {
+              case "Constellation: Dark":
+              case "Constellation: Earth":
+              case "Constellation: Fire":
+              case "Constellation: Light":
+              case "Constellation: Water":
+              case "Constellation: Wind":
+                acc[`${key.toLowerCase().replace("constellation: ", "")}_gte`] =
+                  Number(value.split(",")[0].replace(/[^\d]+/, ""));
+
+                break;
+              default:
+                break;
+            }
+
+            return acc;
+          }, {}),
+        },
+        legionInfo: {
+          id_in: isLegionInfo
+            ? listedTokens.data?.map((id) => `${id}-metadata`)
+            : [],
           ...Object.entries(filters).reduce((acc, [key, [value]]) => {
             switch (key) {
               case "Summon Fatigue":
@@ -354,18 +384,23 @@ const Collection = () => {
                   );
 
                 break;
-              case "Crafting Level":
-              case "Questing Level":
-                acc[`${key.toLowerCase().replace(" level", "")}_in`] = value
-                  .split(",")
-                  .map(Number);
-
+              case "Constellation: Dark":
+              case "Constellation: Earth":
+              case "Constellation: Fire":
+              case "Constellation: Light":
+              case "Constellation: Water":
+              case "Constellation: Wind":
                 break;
+              case "Crafting Level":
               case "Crafting XP":
+              case "Questing Level":
               case "Questing XP":
-                acc[`${key.toLowerCase().replace(" xp", "Xp")}_gte`] = Number(
-                  value.split(",")[0].replace(/[^\d]+/, "")
-                );
+                acc[
+                  `${key
+                    .toLowerCase()
+                    .replace(" xp", "Xp")
+                    .replace(" level", "")}_gte`
+                ] = Number(value.split(",")[0].replace(/[^\d]+/, ""));
 
                 break;
               default:
@@ -375,15 +410,26 @@ const Collection = () => {
             return acc;
           }, {}),
         },
-      }),
+      });
+    },
     {
       enabled:
         Boolean(listedTokens.data) &&
         Object.keys(filters).length > 0 &&
         isBridgeworldItem,
       select: React.useCallback(
-        (data: Awaited<ReturnType<typeof bridgeworld.getFilteredLegions>>) =>
-          data.legionInfos.map((item) => item.id.replace("-metadata", "")),
+        (data: Awaited<ReturnType<typeof bridgeworld.getFilteredLegions>>) => {
+          const constellations = data.constellations.map((item) => item.id);
+          const legionInfos = data.legionInfos.map((item) =>
+            item.id.replace("-metadata", "")
+          );
+
+          if (constellations.length > 0 && legionInfos.length > 0) {
+            return constellations.filter((id) => legionInfos.includes(id));
+          }
+
+          return [...constellations, ...legionInfos];
+        },
         []
       ),
     }
