@@ -1,6 +1,9 @@
 import Image from "next/image";
 
 import logoImg from "../../public/img/logotransparent.png";
+import smolBodiesImg from "../../public/img/smolbodies.png";
+import peekabooImg from "../../public/img/peekaboo.svg";
+import realmImg from "../../public/img/realm.png";
 import Link from "next/link";
 
 const collections = [
@@ -62,8 +65,7 @@ const collections = [
   {
     href: "smol-bodies",
     name: "Smol Bodies",
-    image:
-      "https://ipfs.io/ipfs/QmSqwxNFMeFtgdCnjBTTixx46Wi6TH9FtQ5jAp98JnAoeR/3948/0.png",
+    image: smolBodiesImg.src,
     description:
       "The Smol Bodies inhabit a gym near you, stacking $plates to earn muscle and be not smol.",
   },
@@ -86,14 +88,14 @@ const collections = [
   {
     href: "peek-a-boo",
     name: "Peek-A-Boo",
-    image: "/img/peekaboo.svg",
+    image: peekabooImg.src,
     description:
       "Peek-A-Boo is a collection of 10,000 adorable NFTs. There are two types, Ghosts and Busters.",
   },
   {
     href: "realm",
     name: "Realm",
-    image: "/img/realm.png",
+    image: realmImg.src,
     description:
       "Realm is a decentralized world-building experience. Enjoy $MAGIC emissions and Loot from across the Metaverse.",
   },
