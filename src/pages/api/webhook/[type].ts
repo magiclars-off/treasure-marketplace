@@ -6,6 +6,10 @@ import { z } from "zod";
 import got from "got";
 
 const collectionWebhooks = {
+  "smithonia-weapons": {
+    listWebhook: process.env.SMITHONIA_WEAPONS_LIST_WEBHOOK,
+    soldWebhook: process.env.SMITHONIA_WEAPONS_SOLD_WEBHOOK,
+  },
   "smol-bodies": {
     listWebhook: process.env.SMOLBODIES_LIST_WEBHOOK,
     soldWebhook: process.env.SMOLBODIES_SOLD_WEBHOOK,
