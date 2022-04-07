@@ -12,6 +12,14 @@ export const getBridgeworldMetadata = gql`
         ... on LegionInfo {
           boost
           cooldown
+          constellation {
+            dark
+            earth
+            fire
+            light
+            water
+            wind
+          }
           crafting
           questing
           summons
@@ -39,8 +47,14 @@ export const getBridgeworldMetadata = gql`
 `;
 
 export const getFilteredLegions = gql`
-  query getFilteredLegions($filters: LegionInfo_filter!) {
-    legionInfos(first: 1000, where: $filters) {
+  query getFilteredLegions(
+    $legionInfo: LegionInfo_filter!
+    $constellation: Constellation_filter!
+  ) {
+    constellations(first: 1000, where: $constellation) {
+      id
+    }
+    legionInfos(first: 1000, where: $legionInfo) {
       id
     }
   }

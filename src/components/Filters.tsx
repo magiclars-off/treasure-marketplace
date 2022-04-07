@@ -47,6 +47,7 @@ const FATIGUE = ["Yes", "No"];
 const SUMMONS = ["0", "1", "2"];
 const BOOST = ["0.05", "0.1", "0.25", "0.5", "0.75", "1.0", "2.0", "6.0"];
 const LEVELS = ["1", "2", "3", "4", "5", "6"];
+const RANKS = [...LEVELS, "7"];
 const XPS = Array(20)
   .fill("")
   .map((_, index) => `>= ${index * 10}`);
@@ -145,6 +146,8 @@ const removeFilter = (
   return new URLSearchParams(combined).toString();
 };
 
+const getNumber = (value: string) => Number(value.replace(/[^\d]+/g, ""));
+const isNumber = (value: string) => value.replace(/[^\d]+/g, "").length > 0;
 const unique = <T,>(array: T[]) => Array.from(new Set(array));
 
 const reduceAttributes = (
@@ -298,13 +301,24 @@ export function useFiltersList() {
             value: formatPercent(value),
             percentage: null,
           })),
+          ...["Dark", "Earth", "Fire", "Light", "Water", "Wind"].reduce(
+            (acc, key) => {
+              acc[`Constellation: ${key}`] = RANKS.map((value) => ({
+                value: `>= ${value}`,
+                percentage: null,
+              }));
+
+              return acc;
+            },
+            {}
+          ),
           "Crafting Level": LEVELS.map((value) => ({
-            value,
+            value: `>= ${value}`,
             percentage: null,
           })),
           "Crafting XP": XPS.map((value) => ({ value, percentage: null })),
           "Questing Level": LEVELS.map((value) => ({
-            value,
+            value: `>= ${value}`,
             percentage: null,
           })),
           "Questing XP": XPS.map((value) => ({ value, percentage: null })),
@@ -380,10 +394,14 @@ export function Filters() {
           (attributeKey: keyof typeof attributeFilterList) => {
             const attributes = attributeFilterList[attributeKey]?.sort(
               (left: { value: string }, right: { value: string }) => {
-                const leftNumber = Number(left.value.replace(/[^\d]+/g, ""));
-                const rightNumber = Number(right.value.replace(/[^\d]+/g, ""));
+                const leftNumber = isNumber(left.value)
+                  ? getNumber(left.value)
+                  : null;
+                const rightNumber = isNumber(right.value)
+                  ? getNumber(right.value)
+                  : null;
 
-                if (isNaN(leftNumber) || isNaN(rightNumber)) {
+                if (!leftNumber || !rightNumber) {
                   return left.value.localeCompare(right.value);
                 }
 
