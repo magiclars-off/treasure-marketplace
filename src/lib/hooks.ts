@@ -626,10 +626,15 @@ export function useSmithoniaWeaponsMetadata(input: string[]) {
       keepPreviousData: true,
       initialData,
       select: (values: Metadata[]) =>
-        values.map((value) => ({
-          ...value,
-          id: value.name.replace("Smithonia Weapon #", ""),
-        })),
+        values.map((value) => {
+          const data =
+            "attributes" in value ? normalizeAttributes(value) : value;
+
+          return {
+            ...data,
+            id: value.name.replace("Smithonia Weapon #", ""),
+          };
+        }),
     }
   );
 }
