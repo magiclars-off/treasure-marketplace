@@ -514,6 +514,46 @@ const Collection = () => {
       ),
     }
   );
+  const filteredSmithoniaWeaponsTokens = useQuery(
+    ["sw-filtered-tokens", listedTokens.data, filters],
+    () =>
+      fetch(
+        `${process.env.NEXT_PUBLIC_SMITHONIA_WEAPONS_API}/ids?${formattedSearch
+          ?.split("&")
+          .map((filters) =>
+            filters.split("=").reduce(
+              (field, values) =>
+                field
+                  ? `${field}=${values
+                      .split("%2C")
+                      .map((value, index) =>
+                        index > 0 ? `${field}=${value}` : value
+                      )
+                      .join("&")}`
+                  : values.slice(0, 1).toLowerCase().concat(values.slice(1)),
+              ""
+            )
+          )
+          .join("&")}`
+      ).then((res) => res.json()),
+    {
+      enabled:
+        Boolean(listedTokens.data) &&
+        Object.keys(filters).length > 0 &&
+        isSmithonia,
+      refetchInterval: false,
+      select: React.useCallback(
+        (data: { items: number[] }) => {
+          const hexxed = data.items.map((id) => `0x${id.toString(16)}`);
+
+          return listedTokens.data?.filter((id) =>
+            hexxed.some((hex) => id.endsWith(hex))
+          );
+        },
+        [listedTokens.data]
+      ),
+    }
+  );
   const filteredSharedTokensQueries = useQueries(
     Object.entries(filters).map(([name, value]) => ({
       queryKey: ["shared-filtered-tokens", listedTokens.data, name, value],
@@ -639,6 +679,7 @@ const Collection = () => {
     [
       "searched-token",
       filteredBattleflyTokens.data,
+      filteredSmithoniaWeaponsTokens.data,
       filteredSharedTokens.data,
       filteredRealmTokens.data,
       filteredTreasureTokens.data,
@@ -656,6 +697,7 @@ const Collection = () => {
         start,
         ids:
           filteredBattleflyTokens.data ??
+          filteredSmithoniaWeaponsTokens.data ??
           filteredSharedTokens.data ??
           filteredRealmTokens.data ??
           filteredTreasureTokens.data ??
@@ -689,6 +731,7 @@ const Collection = () => {
     () =>
       searchedTokens.data ??
       filteredBattleflyTokens.data ??
+      filteredSmithoniaWeaponsTokens.data ??
       filteredSharedTokens.data ??
       filteredRealmTokens.data ??
       filteredTreasureTokens.data ??
@@ -698,6 +741,7 @@ const Collection = () => {
     [
       searchedTokens.data,
       filteredBattleflyTokens.data,
+      filteredSmithoniaWeaponsTokens.data,
       filteredSharedTokens.data,
       filteredRealmTokens.data,
       filteredTreasureTokens.data,

@@ -215,6 +215,7 @@ export function useFiltersList() {
 
   const isTreasure = collectionName === "Treasures";
   const isBattleflyItem = collectionName === "BattleFly";
+  const isSmithoniaWeaponsItem = collectionName === "Smithonia Weapons";
   const isShared = METADATA_COLLECTIONS.includes(collectionName);
   const isInventory = router.pathname.startsWith("/inventory/");
 
@@ -246,6 +247,27 @@ export function useFiltersList() {
       ).then((res) => res.json()),
     {
       enabled: isBattleflyItem,
+      refetchInterval: false,
+      select: (
+        data: Array<{ name: string; values: Array<{ value: string }> }>
+      ) =>
+        data.reduce<Array<Attribute>>((acc, { name, values }) => {
+          values.forEach(({ value }) => {
+            acc.push({ name, value, percentage: null });
+          });
+
+          return acc.sort((left, right) => left.name.localeCompare(right.name));
+        }, []),
+    }
+  );
+  const smithoniaWeaponsAttributes = useQuery(
+    ["smithonia-weapons-attributes"],
+    () =>
+      fetch(`${process.env.NEXT_PUBLIC_SMITHONIA_WEAPONS_API}/attributes`).then(
+        (res) => res.json()
+      ),
+    {
+      enabled: isSmithoniaWeaponsItem,
       refetchInterval: false,
       select: (
         data: Array<{ name: string; values: Array<{ value: string }> }>
@@ -357,6 +379,8 @@ export function useFiltersList() {
       }
       case isBattleflyItem:
         return reduceAttributes(battleflyAttributes.data);
+      case isSmithoniaWeaponsItem:
+        return reduceAttributes(smithoniaWeaponsAttributes.data);
       case isShared:
         return reduceAttributes(sharedAttributes.data?.attributes);
       default:
@@ -369,8 +393,10 @@ export function useFiltersList() {
     isBattleflyItem,
     isInventory,
     isShared,
+    isSmithoniaWeaponsItem,
     legacyAttributes.data?.collection?.attributes,
     sharedAttributes.data?.attributes,
+    smithoniaWeaponsAttributes.data,
     treasureBoosts.data,
   ]);
 }

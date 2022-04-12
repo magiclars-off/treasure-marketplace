@@ -616,7 +616,9 @@ export function useSmithoniaWeaponsMetadata(input: string[]) {
     ["smithonia-weapons-metadata", input],
     () =>
       fetch(
-        `${process.env.NEXT_PUBLIC_SMITHONIA_WEAPONS_API}/metadata?id=${input
+        `${
+          process.env.NEXT_PUBLIC_SMITHONIA_WEAPONS_API
+        }/nft/metadata?id=${input
           .map((tokenId) => parseInt(tokenId.slice(45), 16))
           .join(",")}`
       ).then((res) => res.json()),
