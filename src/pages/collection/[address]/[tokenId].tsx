@@ -343,13 +343,12 @@ export default function TokenDetail() {
                     <ImageWrapper
                       token={{
                         name: metadata?.name,
-                        metadata:
-                          metadata?.description && metadata?.image
-                            ? {
-                                description: metadata.description,
-                                image: metadata.image,
-                              }
-                            : null,
+                        metadata: metadata?.image
+                          ? {
+                              description: metadata?.description ?? "",
+                              image: metadata.image,
+                            }
+                          : null,
                       }}
                     />
                   ) : null}

@@ -78,14 +78,12 @@ export const PurchaseItemModal = ({
                   height="50%"
                   token={{
                     name: targetNft.metadata?.name,
-                    metadata:
-                      targetNft.metadata?.description &&
-                      targetNft.metadata?.image
-                        ? {
-                            description: targetNft.metadata.description,
-                            image: targetNft.metadata.image,
-                          }
-                        : null,
+                    metadata: targetNft.metadata?.image
+                      ? {
+                          description: targetNft.metadata?.description ?? "",
+                          image: targetNft.metadata.image,
+                        }
+                      : null,
                   }}
                   width="50%"
                 />
