@@ -3,30 +3,69 @@ import { ChainId } from "@usedapp/core";
 export const Contracts = {
   [ChainId.ArbitrumRinkeby]: {
     magic: "0x7693604341fDC5B73c920b8825518Ec9b6bBbb8b",
-    marketplace: "0x2426acC898C5E1241904fCEf6E5643241192272D",
-    marketplaceBuyer: "0x24b7377Bf073E54eC42ec6CC8F4CDA6e3deB32A8",
+    marketplace: "0x48d515a012429d97E27aA8fC84070cF2E45e5036",
   },
   [ChainId.Arbitrum]: {
     magic: "0x539bdE0d7Dbd336b79148AA742883198BBF60342",
-    marketplace: "0x2E3b85F85628301a0Bce300Dee3A6B04195A15Ee",
-    marketplaceBuyer: "0x812cdA2181ed7c45a35a691E0C85E231D218E273",
+    marketplace: "0x09986B4e255B3c548041a30A2Ee312Fe176731c2",
   },
 };
-
-// TODO: Put this data in the graph
-export const coreCollections = [
-  "Legion Genesis",
-  "Legion Auxiliary",
-  "Treasures",
-  "Smol Brains",
-];
 
 export const BridgeworldItems = [
   "Legion Auxiliary",
   "Legion Genesis",
   "Legions",
   "Consumables",
+  "Balancer Crystal",
+];
+
+export const smolverseItems = [
+  "Smol Bodies Pets",
+  "Smol Brains Pets",
+  "Smol Treasures",
+];
+
+export const METADATA_COLLECTIONS = [
+  "Peek-A-Boo",
+  "Tales of Elleria",
+  "Toadstoolz",
+  "Toadstoolz Itemz",
 ];
 
 export const FEE = 0.05;
 export const USER_SHARE = 1 - FEE;
+
+export const BATTLEFLY_METADATA = {
+  battleflies: {
+    name: "Cocoon",
+    description: "Ordinary cocoon, what's inside?",
+    image:
+      "https://ipfs.infura.io/ipfs/QmecUwQADn2yd2tNBoVvWLuknYMxY8WLnWVfATHG452VJP",
+    attributes: [
+      {
+        trait_type: "Type",
+        value: "Genesis",
+      },
+      {
+        trait_type: "Class",
+        value: "Original",
+      },
+    ],
+  },
+  specials: {
+    name: "v1 Founder",
+    description:
+      "BattleFly v1 Founders NFT represents ownership of the BattleFly Game. There is only 220 NFT in circulation.",
+    image:
+      "https://ipfs.infura.io/ipfs/QmXsiziZsoYEz5sqz7rHCYdtuqaBPrpQbn7UnuUpcf2n6Z",
+    attributes: [],
+  },
+};
+
+export const SMITHONIA_WEAPONS_METADATA = {
+  name: "Smithonia Weapon",
+  description: "Smithonia Weapons",
+  image:
+    "https://bafkreibzmyesy7amoir273ckdcnpndkaz4b3ljdpc6lgexv2abzfnuieq4.ipfs.nftstorage.link/",
+  attributes: [],
+};

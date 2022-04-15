@@ -1,21 +1,21 @@
 import { formatEther } from "ethers/lib/utils";
 import { BigNumberish } from "ethers";
-import { ChainId } from "@usedapp/core";
-import { collections } from "./lib/hooks";
-import { utils } from "ethers";
+import { Zero } from "@ethersproject/constants";
 
 const UNITS = ["", "K", "M", "B", "T", "Q"];
 
 function toFixed(num: number, fixed: number) {
   const formatted = parseFloat(num.toFixed(2));
   const re = new RegExp("^-?\\d+(?:.\\d{0," + (fixed || -1) + "})?");
-
   const numStr = formatted.toString().match(re);
+
   return numStr ? numStr[0] : formatted.toString();
 }
 
 export const generateIpfsLink = (hash: string) => {
-  const removedIpfs = hash.substring(7);
+  const removedIpfs = hash
+    .replace(/.+\/(Qm[^\/]+)/, "$1")
+    .replace(/https:\/\/([^\.]+)\.ipfs\.nftstorage\.link\/?/, "$1");
 
   return `https://ipfs.io/ipfs/${removedIpfs}`;
 };
@@ -23,13 +23,17 @@ export const generateIpfsLink = (hash: string) => {
 export const formatNumber = (number: number) =>
   new Intl.NumberFormat().format(number);
 
-export const formatPrice = (price: BigNumberish) =>
+export const formatPrice = (price: BigNumberish = Zero) =>
   formatNumber(parseFloat(formatEther(price)));
 
 export const formattable = (string: BigNumberish) => {
   // TODO: Fix regex, but will work for Head Size for now
-  if (isNaN(Number(string)) || /^\d$/.test(string.toString())) {
-    return string;
+  if (
+    string == null ||
+    isNaN(Number(string)) ||
+    /^\d{1,6}$/.test(string.toString())
+  ) {
+    return `${string}`;
   }
 
   return formatPrice(string);
@@ -40,10 +44,11 @@ export const formatPercent = (percentage: string) => {
   return toFixed(number * 100, 2) + "%";
 };
 
-export const abbreviatePrice = (number: string) => {
+export const abbreviatePrice = (number: string | number) => {
   if (!number) return 0;
 
-  let formatted_number = parseFloat(formatEther(number));
+  let formatted_number =
+    typeof number === "number" ? number : parseFloat(formatEther(number));
   let unit_index = 0;
 
   while (Math.floor(formatted_number / 1000.0) >= 1) {
@@ -57,65 +62,11 @@ export const abbreviatePrice = (number: string) => {
   return formatted_number.toFixed(1).replace(/\.0+$/, "") + unit;
 };
 
-export function slugToAddress(slugOrAddress: string, chainId: ChainId) {
-  if (utils.isAddress(slugOrAddress)) {
-    return slugOrAddress;
-  }
-  if (!collections?.[chainId]) {
-    return slugOrAddress;
-  }
-  const tokenAddress = collections?.[chainId]?.find(
-    (t) => slugOrAddress === getCollectionSlugFromName(t.name)
-  );
-  return !!tokenAddress?.address ? tokenAddress.address : slugOrAddress;
-}
 // takes a Collection Name and tries to return a user-friendly slug for routes
 // can return undefined if chainId is missing, or address lookup fails
+// TODO: See if this can be removed?
 export function getCollectionSlugFromName(
   collectionName: string | null | undefined
 ): string | undefined {
   return collectionName?.replace(/\s+/g, "-")?.toLowerCase();
-}
-
-export function getCollectionNameFromAddress(
-  tokenAddress: string,
-  chainId: ChainId
-): string | undefined {
-  return collections?.[chainId]?.find((c) => c.address === tokenAddress)?.name;
-}
-
-type Token = {
-  collection: {
-    name: string;
-  };
-  id: string;
-  tokenId: string;
-};
-
-export function getPetsMetadata(token: Token) {
-  const {
-    id,
-    tokenId,
-    collection: { name: collection },
-  } = token;
-  const name = `${collection} #${tokenId}`;
-  const isPets = collection.endsWith("Pets");
-  const isBrains = collection.endsWith("Brains Pets");
-
-  return isPets
-    ? {
-        id,
-        name,
-        tokenId,
-        metadata: {
-          image: `ipfs://${
-            isBrains
-              ? "QmdRyjjv6suTcS9E1aNnKRhvL2McYynrzLbg5VwXH8cCQB"
-              : "Qmak8RVrMWWLEsGtTgVqUJ5a7kkouM2atjyynWT5qQCP2N"
-          }/${tokenId}.gif`,
-          name,
-          description: collection,
-        },
-      }
-    : undefined;
 }

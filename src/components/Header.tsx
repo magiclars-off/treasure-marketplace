@@ -14,18 +14,12 @@ import {
   getChainName,
 } from "@usedapp/core";
 import { formatEther } from "ethers/lib/utils";
-import {
-  formatNumber,
-  getCollectionNameFromAddress,
-  slugToAddress,
-} from "../utils";
+import { formatNumber } from "../utils";
 import { Modal } from "./Modal";
-import { Item } from "react-stately";
+import { Item, Section } from "react-stately";
 import { SearchAutocomplete } from "./SearchAutocomplete";
 import { useRouter } from "next/router";
 import { useMagic } from "../context/magicContext";
-import { coreCollections } from "../const";
-import classNames from "clsx";
 import toast from "react-hot-toast";
 import MetaMaskSvg from "../../public/img/metamask.svg";
 import WalletConnectSvg from "../../public/img/walletconnect.svg";
@@ -33,10 +27,22 @@ import Coinbase from "../../public/img/coinbase.png";
 
 import Image from "next/image";
 import { WalletConnectConnector } from "@web3-react/walletconnect-connector";
-import { useChainId, useCollections } from "../lib/hooks";
+import { useCollections } from "../lib/hooks";
 import { getCollectionSlugFromName } from "../utils";
-import { AddressZero } from "@ethersproject/constants";
 import { WalletLinkConnector } from "@web3-react/walletlink-connector";
+import { useDebounce } from "use-debounce";
+import { useQuery } from "react-query";
+import { marketplace } from "../lib/client";
+import { InboxIcon } from "@heroicons/react/solid";
+import { TreasureIcon } from "./Icons";
+
+const NEW_COLLECTIONS = [
+  "Realm",
+  "Smithonia Weapons",
+  "Tales of Elleria",
+  "Toadstoolz",
+  "Toadstoolz Itemz",
+];
 
 const walletLink = new WalletLinkConnector({
   url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY}`,
@@ -63,7 +69,107 @@ const Header = () => {
     chainId: currentChainId,
   } = useEthers();
   const [isOpenWalletModal, setIsOpenWalletModal] = useState(false);
-  const chainId = useChainId();
+  const [searchValue, setSearchValue] = useState("");
+  const [search] = useDebounce(searchValue, 300);
+
+  const allCollections = useCollections();
+
+  const query = useQuery(
+    ["search", search],
+    () => {
+      const lower = search.toLowerCase();
+      const start = lower[0].toUpperCase().concat(lower.slice(1));
+
+      return marketplace.searchItems({ lower, start });
+    },
+    {
+      enabled: !!search,
+      refetchInterval: false,
+      select: (data) => {
+        const collections = [
+          ...data.lowerCollections,
+          ...data.startCollections,
+          ...allCollections
+            .filter((collection) =>
+              collection.name.toLowerCase().includes(search.toLowerCase())
+            )
+            .map(({ name }) => ({ name })),
+        ]
+          .filter(
+            (collection, index, array) =>
+              array.findIndex((item) => item.name === collection.name) === index
+          )
+          .map((collection) => {
+            const key = `/collection/${getCollectionSlugFromName(
+              collection.name
+            )}`;
+
+            return [
+              { key },
+              <Item key={key}>
+                {collection.name}
+                {NEW_COLLECTIONS.includes(collection.name) ? (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    New
+                  </span>
+                ) : null}
+              </Item>,
+            ] as const;
+          });
+        const tokens = [...data.lowerTokens, ...data.startTokens]
+          .filter(
+            (token, index, array) =>
+              array.findIndex((item) => item.id === token.id) === index
+          )
+          .map((token) => {
+            const key = `/collection/${getCollectionSlugFromName(
+              token.collection.name
+            )}/${token.tokenId}`;
+
+            return [{ key }, <Item key={key}>{token.name}</Item>] as const;
+          });
+
+        const items = [
+          ...collections.map(([key]) => key),
+          ...tokens.map(([key]) => key),
+        ];
+
+        const collectionElements = collections.map(([, jsx]) => jsx);
+        const tokenElements = tokens.map(([, jsx]) => jsx);
+
+        if (collections.length > 0 && tokens.length > 0) {
+          return {
+            items,
+            children: [
+              <Section key="collections" title="Collections">
+                {collectionElements}
+              </Section>,
+              <Section key="items" title="Items">
+                {tokenElements}
+              </Section>,
+            ],
+          };
+        }
+
+        if (collections.length === 0 && items.length === 0) {
+          return {
+            items: [],
+            children: <Item key="empty">No results found.</Item>,
+          };
+        }
+
+        return {
+          items,
+          children:
+            tokens.length > 0 ? (
+              <Section title="Items">{tokenElements}</Section>
+            ) : (
+              <Section title="Collections">{collectionElements}</Section>
+            ),
+        };
+      },
+    }
+  );
 
   const router = useRouter();
   const { address } = router.query;
@@ -77,16 +183,8 @@ const Header = () => {
 
   const onClose = () => setIsOpenWalletModal(false);
 
-  const data = useCollections();
-
-  const formattedAddress = Array.isArray(address)
-    ? slugToAddress(address[0], chainId)
-    : slugToAddress(address?.toLowerCase() ?? AddressZero, chainId);
-
-  const collectionName = getCollectionNameFromAddress(
-    formattedAddress,
-    chainId
-  );
+  const collectionName =
+    allCollections.find((item) => item.slug === address)?.name ?? "";
 
   const showBwWarning = [
     "Unpilgrimaged Legion Auxiliary",
@@ -132,7 +230,7 @@ const Header = () => {
       <Transition.Root show={mobileMenuOpen} as={Fragment}>
         <Dialog
           as="div"
-          className="fixed inset-0 flex z-40 lg:hidden"
+          className="fixed inset-0 flex justify-end z-40 lg:hidden"
           onClose={setMobileMenuOpen}
         >
           <Transition.Child
@@ -150,14 +248,14 @@ const Header = () => {
           <Transition.Child
             as={Fragment}
             enter="transition ease-in-out duration-300 transform"
-            enterFrom="-translate-x-full"
-            enterTo="translate-x-0"
+            enterFrom="translate-x-full"
+            enterTo="-translate-x-0"
             leave="transition ease-in-out duration-300 transform"
-            leaveFrom="translate-x-0"
-            leaveTo="-translate-x-full"
+            leaveFrom="-translate-x-0"
+            leaveTo="translate-x-full"
           >
             <div className="relative max-w-xs w-full bg-white dark:bg-gray-900 shadow-xl flex flex-col overflow-y-auto">
-              <div className="px-4 pt-5 pb-2 flex">
+              <div className="px-4 pt-5 pb-2 flex justify-end">
                 <button
                   type="button"
                   className="-m-2 p-2 rounded-md inline-flex items-center justify-center text-gray-400"
@@ -168,20 +266,46 @@ const Header = () => {
                 </button>
               </div>
               <div className="py-6 px-4 space-y-6 flex-1">
-                {data.map((page) => {
-                  const slugOrAddress =
-                    getCollectionSlugFromName(page.name) ?? page.address;
-
-                  return (
-                    <div key={page.name} className="flow-root">
-                      <Link href={`/collection/${slugOrAddress}`} passHref>
-                        <a className="-m-2 p-2 block font-medium text-gray-900 dark:text-gray-200">
-                          {page.name}
-                        </a>
-                      </Link>
-                    </div>
-                  );
-                })}
+                <div className="flow-root">
+                  <Link href="/" passHref>
+                    <a className="-m-2 p-2 block font-medium text-gray-900 dark:text-gray-200">
+                      Home
+                    </a>
+                  </Link>
+                </div>
+                <div className="flow-root">
+                  <Link href="/inventory" passHref>
+                    <a className="-m-2 p-2 block font-medium text-gray-900 dark:text-gray-200">
+                      Inventory
+                    </a>
+                  </Link>
+                </div>
+                {!account ? (
+                  <button
+                    className="flow-root"
+                    onClick={() => setIsOpenWalletModal(true)}
+                  >
+                    Connect Wallet
+                  </button>
+                ) : null}
+                <div className="border-b border-gray-200 dark:border-gray-500 pb-4">
+                  <button
+                    className="flow-root"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setSushiModalOpen(true);
+                    }}
+                  >
+                    Purchase $MAGIC
+                  </button>
+                </div>
+                <div className="flow-root">
+                  <Link href="/activity" passHref>
+                    <a className="-m-2 p-2 block font-medium text-gray-900 dark:text-gray-200">
+                      Activity
+                    </a>
+                  </Link>
+                </div>
               </div>
               {account && (
                 <div className="flex-shrink-0 flex flex-col items-center border-t border-gray-200 dark:border-gray-500 p-4">
@@ -196,15 +320,6 @@ const Header = () => {
                       {shortenAddress(account)}
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setSushiModalOpen(true);
-                    }}
-                    className="text-[0.5rem] block underline place-self-end mt-2 dark:text-gray-300"
-                  >
-                    Buy more MAGIC &gt;
-                  </button>
                 </div>
               )}
             </div>
@@ -218,86 +333,71 @@ const Header = () => {
             <div className="bg-white dark:bg-black shadow-sm">
               <div className="mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="h-16 flex items-center justify-between">
-                  <div className="hidden h-full lg:flex lg:items-center">
-                    <div className="h-full justify-center space-x-6 mr-6 hidden xl:flex">
-                      {data
-                        .filter((collection) =>
-                          coreCollections.includes(collection.name)
-                        )
-                        .map((collection) => {
-                          const active = collection.address === address;
-                          const slugOrAddress =
-                            getCollectionSlugFromName(collection.name) ??
-                            collection.address;
-
-                          return (
-                            <Link
-                              href={`/collection/${slugOrAddress}`}
-                              passHref
-                              key={collection.name}
-                            >
-                              <a
-                                className={classNames(
-                                  "flex items-center text-sm font-medium dark:hover:text-gray-200 hover:text-gray-800",
-                                  {
-                                    "dark:text-gray-200 text-red-700": active,
-                                    "dark:text-gray-500 text-gray-700": !active,
-                                  }
-                                )}
-                              >
-                                {collection.name}
-                              </a>
-                            </Link>
-                          );
-                        })}
-                    </div>
-                    <div className="bottom-0 inset-x-0">
+                  <div className="hidden lg:flex items-center mr-4">
+                    <Link href="/" passHref>
+                      <a className="text-red-500">
+                        <span className="sr-only">Home</span>
+                        <TreasureIcon />
+                      </a>
+                    </Link>
+                  </div>
+                  <div className="h-full flex flex-1 items-center">
+                    <div className="bottom-0 inset-x-0 flex-1">
                       <SearchAutocomplete
-                        label="Search Collection"
+                        {...(query.data ?? {
+                          children: (
+                            <Section key="collections" title="Collections">
+                              {allCollections.map((collection) => {
+                                const key = `/collection/${getCollectionSlugFromName(
+                                  collection.name
+                                )}`;
+
+                                return (
+                                  <Item key={key}>
+                                    {collection.name}
+                                    {NEW_COLLECTIONS.includes(
+                                      collection.name
+                                    ) ? (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        New
+                                      </span>
+                                    ) : null}
+                                  </Item>
+                                );
+                              })}
+                            </Section>
+                          ),
+                        })}
+                        isLoading={query.fetchStatus === "fetching"}
+                        label="Search items or collections"
+                        placeholder="Search items or collections"
                         allowsCustomValue
+                        disabledKeys={["empty"]}
+                        inputValue={searchValue}
+                        onInputChange={setSearchValue}
                         onSelectionChange={(name) => {
-                          const targetCollection = data.find(
-                            (collection) => collection.name === name
-                          );
+                          if (name) {
+                            router.push(`${name}`);
 
-                          if (targetCollection) {
-                            const slugOrAddress =
-                              getCollectionSlugFromName(
-                                targetCollection.name
-                              ) ?? targetCollection.address;
-
-                            router.push(`/collection/${slugOrAddress}`);
+                            setTimeout(() => {
+                              setSearchValue("");
+                            }, 10);
                           }
                         }}
-                      >
-                        {data.map((collection) => (
-                          <Item key={collection.name}>{collection.name}</Item>
-                        )) ?? []}
-                      </SearchAutocomplete>
+                      />
                     </div>
                   </div>
 
-                  <div className="lg:flex-1 flex items-center lg:hidden">
+                  <div className="flex items-center justify-end">
                     <button
-                      type="button"
-                      className="-ml-2 bg-white dark:bg-transparent p-2 rounded-md text-gray-400"
-                      onClick={() => setMobileMenuOpen(true)}
-                    >
-                      <span className="sr-only">Open menu</span>
-                      <MenuIcon className="h-6 w-6" aria-hidden="true" />
-                    </button>
-                  </div>
-
-                  <div className="flex-1 flex items-center justify-end">
-                    <button
-                      className="text-gray-700 block px-4 py-2 text-sm dark:text-gray-200"
+                      className="hidden text-gray-700 lg:block px-4 py-2 text-sm whitespace-nowrap dark:text-gray-200"
                       onClick={() => setSushiModalOpen(true)}
                     >
                       Purchase $MAGIC
                     </button>
                     <div className="flex items-center">
                       {account ? (
-                        <div className="w-auto items-center rounded-lg dark:bg-gray-500 bg-red-500 p-0.5 whitespace-nowrap font-bold select-none pointer-events-auto mx-2 hidden sm:flex">
+                        <div className="w-auto items-center rounded-lg dark:bg-gray-500 bg-red-500 p-0.5 whitespace-nowrap font-bold select-none pointer-events-auto mx-4 lg:mx-2 hidden sm:flex">
                           <div className="px-2 sm:px-3 py-1 sm:py-2 text-bold flex items-center text-xs sm:text-sm">
                             <span className="text-white block">
                               {formatNumber(
@@ -314,26 +414,44 @@ const Header = () => {
                         </div>
                       ) : (
                         <button
-                          className="mx-2 inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-red-300 dark:border-gray-500 rounded text-xs md:text-sm font-bold text-white dark:text-gray-300 bg-red-500 dark:bg-gray-800 hover:bg-red-600 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-gray-700"
+                          className="mx-2 hidden sm:inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-red-300 dark:border-gray-500 rounded text-xs md:text-sm font-bold text-white dark:text-gray-300 bg-red-500 dark:bg-gray-800 hover:bg-red-600 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-gray-700"
                           onClick={() => setIsOpenWalletModal(true)}
                         >
                           Connect Wallet
                         </button>
                       )}
 
-                      <div className="ml-4 flow-root sm:border-l border-gray-200 pl-4 sm:pl-6 text-sm">
+                      <div className="hidden ml-4 lg:flow-root sm:border-l border-gray-200 pl-4 text-sm">
                         <Link href="/activity" passHref>
                           <a className="hover:text-gray-900 text-gray-500 dark:hover:text-gray-200">
                             Activity
                           </a>
                         </Link>
                       </div>
-                      <div className="ml-4 flow-root sm:border-l border-gray-200 pl-4 sm:pl-6 text-sm">
+                      <div className="hidden ml-4 md:flow-root sm:border-l border-gray-200 pl-4 text-sm">
                         <Link href="/inventory" passHref>
                           <a className="hover:text-gray-900 text-gray-500 dark:hover:text-gray-200">
                             Inventory
                           </a>
                         </Link>
+                      </div>
+                      <div className="flow-root md:hidden text-sm pl-4 sm:pl-0">
+                        <Link href="/inventory" passHref>
+                          <a className="hover:text-gray-900 text-gray-500 dark:hover:text-gray-200">
+                            <span className="sr-only">Inventory</span>
+                            <InboxIcon className="h-6 w-6" />
+                          </a>
+                        </Link>
+                      </div>
+                      <div className="lg:hidden flex items-center">
+                        <button
+                          type="button"
+                          className="bg-white dark:bg-transparent p-4 rounded-md text-gray-400"
+                          onClick={() => setMobileMenuOpen(true)}
+                        >
+                          <span className="sr-only">Open menu</span>
+                          <MenuIcon className="h-6 w-6" aria-hidden="true" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -467,6 +585,7 @@ const Header = () => {
         onClose={onClose}
         className="md:max-w-3xl sm:max-w-xl"
         hideCloseIcon
+        zIndex="50"
       >
         <div className="grid grid-cols-1 divide-y-[1px] sm:divide-y-0 sm:grid-cols-2">
           <div className="flex justify-center px-4 py-3">

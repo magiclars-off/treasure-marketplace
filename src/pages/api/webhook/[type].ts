@@ -6,35 +6,41 @@ import { z } from "zod";
 import got from "got";
 
 const collectionWebhooks = {
-  // Smol Bodies
-  "0x17dacad7975960833f374622fad08b90ed67d1b5": {
+  "smithonia-weapons": {
+    listWebhook: process.env.SMITHONIA_WEAPONS_LIST_WEBHOOK,
+    soldWebhook: process.env.SMITHONIA_WEAPONS_SOLD_WEBHOOK,
+  },
+  "smol-bodies": {
     listWebhook: process.env.SMOLBODIES_LIST_WEBHOOK,
     soldWebhook: process.env.SMOLBODIES_SOLD_WEBHOOK,
   },
-  // Smol Bodies Pets
-  "0xae0d0c4cc3335fd49402781e406adf3f02d41bca": {
+  "smol-bodies-pets": {
     listWebhook: process.env.SMOLBODIES_LIST_WEBHOOK,
     soldWebhook: process.env.SMOLBODIES_SOLD_WEBHOOK,
   },
-  // Smol Brains
-  "0x6325439389e0797ab35752b4f43a14c004f22a9c": {
+  "smol-brains": {
     listWebhook: process.env.SMOLBRAINS_LIST_WEBHOOK,
     soldWebhook: process.env.SMOLBRAINS_SOLD_WEBHOOK,
   },
-  // Smol Brains Land
-  "0xd666d1cc3102cd03e07794a61e5f4333b4239f53": {
+  "smol-brains-land": {
     listWebhook: process.env.SMOLBRAINS_LIST_WEBHOOK,
     soldWebhook: process.env.SMOLBRAINS_SOLD_WEBHOOK,
   },
-  // Smol Cars
-  "0xb16966dad2b5a5282b99846b23dcdf8c47b6132c": {
+  "smol-cars": {
     listWebhook: process.env.SMOLBRAINS_LIST_WEBHOOK,
     soldWebhook: process.env.SMOLBRAINS_SOLD_WEBHOOK,
   },
-  // Smol Brains Pets
-  "0xf6cc57c45ce730496b4d3df36b9a4e4c3a1b9754": {
+  "smol-treasures": {
     listWebhook: process.env.SMOLBRAINS_LIST_WEBHOOK,
     soldWebhook: process.env.SMOLBRAINS_SOLD_WEBHOOK,
+  },
+  "smol-brains-pets": {
+    listWebhook: process.env.SMOLBRAINS_LIST_WEBHOOK,
+    soldWebhook: process.env.SMOLBRAINS_SOLD_WEBHOOK,
+  },
+  "tales-of-elleria": {
+    listWebhook: process.env.TALES_OF_ELLERIA_LIST_WEBHOOK,
+    soldWebhook: process.env.TALES_OF_ELLERIA_SOLD_WEBHOOK,
   },
 };
 
@@ -79,26 +85,26 @@ export default async function handler(
     .parse(req.query);
 
   const {
-    address,
     collection,
     expires,
-    tokenId,
     image,
     name,
     price,
     quantity,
+    slug,
+    tokenId,
     updates,
     user,
   } = z
     .object({
-      address: z.string(),
       collection: z.string(),
-      tokenId: z.string(),
       expires: z.number().optional(),
       image: z.string(),
       name: z.string(),
       price: z.string(),
       quantity: z.number(),
+      slug: z.string(),
+      tokenId: z.string(),
       updates: z
         .object({
           expires: z.number(),
@@ -132,16 +138,18 @@ export default async function handler(
               ? "Item Updated!"
               : "Item Sold!",
           thumbnail: {
-            url: image,
+            url: image.startsWith("/img/")
+              ? `https://marketplace.treasure.lol${image}`
+              : image,
           },
           fields: [
             {
               name: "Name",
-              value: `[${name}](https://marketplace.treasure.lol/collection/${address}/${tokenId})`,
+              value: `[${name}](https://marketplace.treasure.lol/collection/${slug}/${tokenId})`,
             },
             {
               name: "Collection",
-              value: `[${collection}](https://marketplace.treasure.lol/collection/${address})`,
+              value: `[${collection}](https://marketplace.treasure.lol/collection/${slug})`,
             },
             updates
               ? formatUpdate(
@@ -188,16 +196,14 @@ export default async function handler(
   try {
     await got.post(type === "sold" ? soldWebhook : listWebhook, payload).json();
 
-    const lowerAddress = address.toLowerCase();
-
-    if (collectionWebhooks[lowerAddress]) {
+    if (collectionWebhooks[slug]) {
       console.log("Posting to collection webhook!");
 
       await got
         .post(
           type === "sold"
-            ? collectionWebhooks[lowerAddress].soldWebhook
-            : collectionWebhooks[lowerAddress].listWebhook,
+            ? collectionWebhooks[slug].soldWebhook
+            : collectionWebhooks[slug].listWebhook,
           payload
         )
         .json();

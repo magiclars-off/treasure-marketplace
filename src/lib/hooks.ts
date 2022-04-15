@@ -6,26 +6,42 @@ import {
   ERC20Interface,
   useContractCalls,
   useContractFunction,
-  useEthers,
+  useEthers as useDappEthers,
 } from "@usedapp/core";
 import { BigNumber, Contract } from "ethers";
-import { Contracts } from "../const";
+import {
+  BATTLEFLY_METADATA,
+  BridgeworldItems,
+  Contracts,
+  METADATA_COLLECTIONS,
+  SMITHONIA_WEAPONS_METADATA,
+  smolverseItems,
+} from "../const";
 import { Interface } from "@ethersproject/abi";
 import { generateIpfsLink } from "../utils";
 import { toast } from "react-hot-toast";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "react-query";
 import { MaxUint256 } from "@ethersproject/constants";
 import plur from "plur";
 import { TokenStandard } from "../../generated/queries.graphql";
-import { marketplace } from "./client";
+import {
+  bridgeworld,
+  client,
+  marketplace,
+  metadata,
+  realm,
+  smolverse,
+} from "./client";
 import { AddressZero } from "@ethersproject/constants";
+import { normalizeBridgeworldTokenMetadata } from "../utils/metadata";
+import { GetBridgeworldMetadataQuery } from "../../generated/bridgeworld.graphql";
 
 type WebhookBody = {
-  address: string;
   collection: string;
   expires?: number;
   image: string;
+  slug: string;
   tokenId: string;
   name: string;
   price: string;
@@ -46,6 +62,15 @@ function callWebhook(
       image: image.replace(/ /g, "%20"),
     }),
   });
+}
+
+/**
+ * Create a wrapper function so we can override account information in one place if needed.
+ */
+export function useEthers() {
+  const data = useDappEthers();
+
+  return data;
 }
 
 export function useChainId() {
@@ -69,158 +94,44 @@ export type Collections = {
   [key: number]: CollectionItem[];
 };
 
-export const collections: Collections = {
-  [ChainId.ArbitrumRinkeby]: [
-    {
-      name: "Consumables",
-      address: "0x906369481b258ca3c21a6737bce052d85572a8f3",
-    },
-    {
-      name: "Extra Life",
-      address: AddressZero,
-    },
-    {
-      name: "Keys",
-      address: AddressZero,
-    },
-    {
-      name: "Legion Auxiliary",
-      address: "0x96f791c0c11baee97526d5a9674494805afbec1c-1",
-    },
-    {
-      name: "Legion Genesis",
-      address: "0x96f791c0c11baee97526d5a9674494805afbec1c-0",
-    },
-    // Recruits
-    {
-      name: "Legions",
-      address: "0x96f791c0c11baee97526d5a9674494805afbec1c-2",
-    },
-    {
-      name: "Unpilgrimaged Legion Auxiliary",
-      address: "0x5ffdf09caa5bb19d18dccd93ec97fabbab84f15f",
-    },
-    {
-      name: "Unpilgrimaged Legion Genesis",
-      address: "0x63160c8e00e9b6f30dab7f172e0f9bf0666f75b7",
-    },
+type Collection = Record<"address" | "id" | "name" | "slug", string>;
 
-    {
-      name: "Seed of Life",
-      address: AddressZero,
-    },
-    {
-      name: "Smol Bodies",
-      address: AddressZero,
-    },
-    {
-      name: "Smol Bodies Pets",
-      address: AddressZero,
-    },
-    {
-      name: "Smol Brains",
-      address: "0x4feea06250d9f315a6a454c9c8a7fcbcf8701210",
-    },
-    {
-      name: "Smol Brains Land",
-      address: AddressZero,
-    },
-    {
-      name: "Smol Brains Pets",
-      address: AddressZero,
-    },
-    {
-      name: "Treasures",
-      address: "0x6333F38F98f5c46dA6F873aCbF25DCf8748DDc2c",
-    },
-    {
-      name: "Smol Cars",
-      address: AddressZero,
-    },
-  ],
-  [ChainId.Arbitrum]: [
-    {
-      name: "Consumables",
-      address: "0xf3d00a2559d84de7ac093443bcaada5f4ee4165c",
-    },
-    {
-      name: "Extra Life",
-      address: "0x21e1969884d477afd2afd4ad668864a0eebd644c",
-    },
-    {
-      name: "Keys",
-      address: "0xf0a35ba261ece4fc12870e5b7b9e7790202ef9b5",
-    },
-    {
-      name: "Legion Auxiliary",
-      address: "0xfe8c1ac365ba6780aec5a985d989b327c27670a1-1",
-    },
-    {
-      name: "Legion Genesis",
-      address: "0xfe8c1ac365ba6780aec5a985d989b327c27670a1-0",
-    },
-    // Recruits
-    {
-      name: "Legions",
-      address: "0xfe8c1ac365ba6780aec5a985d989b327c27670a1-2",
-    },
-    {
-      name: "Unpilgrimaged Legion Auxiliary",
-      address: "0x658365026d06f00965b5bb570727100e821e6508",
-    },
-    {
-      name: "Unpilgrimaged Legion Genesis",
-      address: "0xe83c0200e93cb1496054e387bddae590c07f0194",
-    },
-    {
-      name: "Smol Bodies",
-      address: "0x17dacad7975960833f374622fad08b90ed67d1b5",
-    },
-    {
-      name: "Smol Bodies Pets",
-      address: "0xae0d0c4cc3335fd49402781e406adf3f02d41bca",
-    },
-    {
-      name: "Smol Brains",
-      address: "0x6325439389e0797ab35752b4f43a14c004f22a9c",
-    },
-    {
-      name: "Smol Brains Land",
-      address: "0xd666d1cc3102cd03e07794a61e5f4333b4239f53",
-    },
-    {
-      name: "Smol Brains Pets",
-      address: "0xf6cc57c45ce730496b4d3df36b9a4e4c3a1b9754",
-    },
-    {
-      name: "Smol Cars",
-      address: "0xb16966dad2b5a5282b99846b23dcdf8c47b6132c",
-    },
-    {
-      name: "Treasures",
-      address: "0xebba467ecb6b21239178033189ceae27ca12eadf",
-    },
-    {
-      name: "Seed of Life",
-      address: "0x3956c81a51feaed98d7a678d53f44b9166c8ed66",
-    },
-  ],
-};
-
-export function useCollections(): Array<{ address: string; name: string }> {
-  const chainId = useChainId();
-  const { data, isError } = useQuery(
+export function useCollections(): Collection[] {
+  const { data } = useQuery(
     ["collections"],
     () => marketplace.getCollections(),
-    { refetchInterval: false }
+    { refetchInterval: 60_000 }
   );
 
-  return isError
-    ? collections[chainId]
-    : data?.collections.map((item) => ({
-        address: item.contract,
-        name: item.name,
-      })) ?? collections[chainId];
+  return (
+    data?.collections.map((item) => ({
+      address: item.contract,
+      id: item.id,
+      name: item.name,
+      slug: item.name.replace(/\s+/g, "-")?.toLowerCase(),
+    })) ?? []
+  );
+}
+
+export function useCollection(input?: string | string[]) {
+  const collections = useCollections();
+  const slugOrAddress =
+    (Array.isArray(input) ? input[0]?.toLowerCase() : input?.toLowerCase()) ??
+    AddressZero;
+
+  const collection = collections.find(({ address, slug }) =>
+    [address, slug].includes(slugOrAddress)
+  ) ?? { id: "", address: AddressZero, name: "", slug: "" };
+
+  return collection;
+}
+
+export function useCollectionNameFromAddress(
+  tokenAddress: string
+): string | undefined {
+  const collections = useCollections();
+
+  return collections.find(({ address }) => address === tokenAddress)?.name;
 }
 
 export function useTransferNFT(contract: string, standard: TokenStandard) {
@@ -340,7 +251,7 @@ export function useCreateListing() {
           `Successfully listed ${quantity} ${plur(name, quantity)} for sale!`
         );
 
-        queryClient.invalidateQueries("inventory", { refetchInactive: true });
+        queryClient.invalidateQueries(["inventory"], { refetchType: "all" });
 
         webhook.current?.();
         webhook.current = undefined;
@@ -359,13 +270,13 @@ export function useCreateListing() {
       expires: number
     ) => {
       setInfo({ nft, quantity });
-      sell.send(address, tokenId, quantity, price, expires);
+      sell.send(address, tokenId, quantity, price, Math.round(expires / 1000));
 
       webhook.current = () => {
-        const { collection, name, source } = nft;
+        const { collection, name, source, slug } = nft;
 
         callWebhook("list", {
-          address,
+          slug,
           collection,
           expires,
           tokenId: nft.tokenId,
@@ -408,7 +319,7 @@ export function useRemoveListing() {
       case "Success":
         toast.success(`Successfully removed the listing for ${name}!`);
 
-        queryClient.invalidateQueries("inventory", { refetchInactive: true });
+        queryClient.invalidateQueries(["inventory"], { refetchType: "all" });
 
         break;
     }
@@ -432,7 +343,7 @@ export function useBuyItem() {
   const webhook = useRef<() => void>();
 
   const { send: sendBuy, state } = useContractFunction(
-    new Contract(Contracts[chainId].marketplaceBuyer, abis.marketplaceBuyer),
+    new Contract(Contracts[chainId].marketplace, abis.marketplace),
     "buyItem"
   );
 
@@ -466,15 +377,15 @@ export function useBuyItem() {
       sendBuy(address, tokenId, ownerAddress, quantity, pricePerItem);
 
       webhook.current = () => {
-        const { metadata, payload } = nft;
+        const { metadata, payload, slug, collection } = nft;
 
         callWebhook("sold", {
-          address,
-          collection: metadata?.description ?? "",
+          slug,
+          collection,
           image: metadata?.image?.includes("ipfs")
             ? generateIpfsLink(metadata.image)
             : metadata?.image ?? "",
-          name: `${metadata?.description ?? ""} ${metadata?.name ?? ""}`,
+          name: metadata?.name ?? "",
           tokenId: payload.tokenId,
           price: payload.pricePerItem.toString(),
           quantity,
@@ -522,7 +433,7 @@ export function useUpdateListing() {
           `Successfully listed ${quantity} ${plur(name, quantity)} for sale!`
         );
 
-        queryClient.invalidateQueries("inventory", { refetchInactive: true });
+        queryClient.invalidateQueries(["inventory"], { refetchType: "all" });
 
         webhook.current?.();
         webhook.current = undefined;
@@ -547,13 +458,19 @@ export function useUpdateListing() {
       expires: number
     ) => {
       setInfo({ nft, quantity });
-      update.send(address, tokenId, quantity, price, expires);
+      update.send(
+        address,
+        tokenId,
+        quantity,
+        price,
+        Math.round(expires / 1000)
+      );
 
       webhook.current = () => {
-        const { collection, listing, name, source, tokenId } = nft;
+        const { collection, listing, slug, name, source, tokenId } = nft;
 
         callWebhook("update", {
-          address,
+          slug,
           collection,
           tokenId,
           expires: Number(listing?.expires ?? 0),
@@ -581,8 +498,435 @@ export const useApproveMagic = () => {
   const { send, state } = useContractFunction(contract, "approve");
 
   return {
-    send: () =>
-      send(Contracts[chainId].marketplaceBuyer, MaxUint256.toString()),
+    send: () => send(Contracts[chainId].marketplace, MaxUint256.toString()),
     state,
   };
 };
+
+type Metadata = {
+  id: string;
+  description?: string;
+  image?: string | null;
+  name: string;
+  tokenId?: string | number;
+  attributes?: Array<
+    | {
+        attribute: {
+          name: string;
+          value: string;
+        };
+      }
+    | {
+        name: string;
+        percentage?: string | null;
+        value: string;
+      }
+  > | null;
+};
+
+const REALM_METRIC_NAMES = ["Gold", "Food", "Culture", "Technology"];
+const REALM_EMPTY_METRICS = REALM_METRIC_NAMES.map((name) => ({
+  name,
+  totalAmount: "0",
+}));
+
+const normalizeAttributes = (data) => ({
+  ...data,
+  attributes: data.attributes.map(({ attribute, trait_type: name, value }) => ({
+    attribute: attribute ?? { name, value },
+  })),
+});
+
+function useBattleflyApi(key: "bf" | "founders", input: string[]) {
+  const slug = key === "bf" ? "battleflies" : "specials";
+
+  const initialData = useCallback(() => {
+    if (input.length === 0) {
+      return undefined;
+    }
+
+    const data = normalizeAttributes(BATTLEFLY_METADATA[slug]);
+
+    return input.map((id) => ({ id, ...data }));
+  }, [input, slug]);
+
+  return useQuery<Metadata[]>(
+    [`${key}-metadata`, input],
+    () =>
+      fetch(
+        `${process.env.NEXT_PUBLIC_BATTLEFLY_API}/${slug}/metadata?ids=${input
+          .map((tokenId) => parseInt(tokenId.slice(45), 16))
+          .join(",")}`
+      ).then((res) => res.json()),
+    {
+      enabled: input.length > 0,
+      refetchInterval: false,
+      keepPreviousData: true,
+      initialData,
+      select: useCallback(
+        (values: Metadata[]) =>
+          values.map((value) => {
+            const data = normalizeAttributes(value);
+
+            return {
+              ...data,
+              id: input.find((item) =>
+                item.endsWith(`-0x${value.tokenId?.toString(16)}`)
+              ),
+              name:
+                value.name === "Cocoon"
+                  ? [
+                      data.attributes.find(
+                        ({ attribute }) => attribute.name === "Edition"
+                      )?.attribute.value,
+                      value.name,
+                    ]
+                      .filter(Boolean)
+                      .join(" ")
+                  : value.name,
+            };
+          }),
+        [input]
+      ),
+    }
+  );
+}
+
+export function useBattleflyMetadata(input: string[]) {
+  return useBattleflyApi("bf", input);
+}
+
+export function useFoundersMetadata(input: string[]) {
+  return useBattleflyApi("founders", input);
+}
+
+export function useSmithoniaWeaponsMetadata(input: string[]) {
+  const initialData = useCallback(() => {
+    if (input.length === 0) {
+      return undefined;
+    }
+
+    return input.map((id) => ({
+      ...SMITHONIA_WEAPONS_METADATA,
+      id: `${parseInt(id.slice(45), 16)}`,
+      name: `${SMITHONIA_WEAPONS_METADATA.name} #${parseInt(id.slice(45), 16)}`,
+    }));
+  }, [input]);
+
+  return useQuery(
+    ["smithonia-weapons-metadata", input],
+    () =>
+      fetch(
+        `${
+          process.env.NEXT_PUBLIC_SMITHONIA_WEAPONS_API
+        }/nft/metadata?id=${input
+          .map((tokenId) => parseInt(tokenId.slice(45), 16))
+          .join(",")}`
+      ).then((res) => res.json()),
+    {
+      enabled: input.filter(Boolean).length > 0,
+      refetchInterval: false,
+      keepPreviousData: true,
+      initialData,
+      select: (values: Metadata[]) =>
+        values.map((value) => {
+          const data =
+            "attributes" in value ? normalizeAttributes(value) : value;
+
+          return {
+            ...data,
+            id: value.name.replace("Smithonia Weapon #", ""),
+          };
+        }),
+    }
+  );
+}
+
+type Attribute = Awaited<
+  ReturnType<typeof metadata.getTokenMetadata>
+>["tokens"][number]["attributes"][number];
+
+function formatCurrentMaxAttribute([current, max]: [Attribute, Attribute]) {
+  return {
+    ...current,
+    value: `${current.value}/${max.value}`,
+  };
+}
+
+export function useMetadata(
+  collectionName: string,
+  { id = "", ids = [] }: Partial<{ id: string; ids: string[] }>
+) {
+  const isBridgeworldItem = BridgeworldItems.includes(collectionName);
+  const isSmolverseItem = smolverseItems.includes(collectionName);
+  const isBattleflyItem = collectionName === "BattleFly";
+  const isFoundersItem = collectionName.includes("Founders");
+  const isTreasureItem = collectionName === "Treasures";
+  const isShared = METADATA_COLLECTIONS.includes(collectionName);
+  const isRealm = collectionName === "Realm";
+  const isSmithonia = collectionName === "Smithonia Weapons";
+  const collection = useCollection(collectionName);
+
+  const legacyMetadataResult = useQuery(
+    ["metadata", ids],
+    () => client.getCollectionMetadata({ ids }),
+    {
+      enabled:
+        !!ids &&
+        !isBridgeworldItem &&
+        !isSmolverseItem &&
+        !isBattleflyItem &&
+        !isFoundersItem &&
+        !isShared &&
+        !isRealm &&
+        !isSmithonia,
+      refetchInterval: false,
+      keepPreviousData: true,
+    }
+  );
+
+  const tokenMetadataResult = useQuery(
+    ["details-metadata", id],
+    () => client.getTokenMetadata({ id }),
+    {
+      enabled:
+        !!id &&
+        !isBridgeworldItem &&
+        !isTreasureItem &&
+        !isSmolverseItem &&
+        !isBattleflyItem &&
+        !isFoundersItem &&
+        !isShared &&
+        !isRealm &&
+        !isSmithonia,
+      refetchInterval: false,
+      keepPreviousData: true,
+      select: ({ token }) => {
+        const metadata = token?.metadata;
+
+        return {
+          token: { ...token, metadata: { ...metadata, name: token?.name } },
+        };
+      },
+    }
+  );
+
+  const bridgeworldMetadataResult = useQuery(
+    ["bw-metadata", ids],
+    () => bridgeworld.getBridgeworldMetadata({ ids }),
+    {
+      enabled: !!ids && (isBridgeworldItem || isTreasureItem),
+      refetchInterval: false,
+      keepPreviousData: true,
+    }
+  );
+
+  const smolverseMetadataResult = useQuery(
+    ["sv-metadata", ids],
+    () => smolverse.getSmolverseMetadata({ ids }),
+    {
+      enabled: !!ids && isSmolverseItem,
+      refetchInterval: false,
+      keepPreviousData: true,
+    }
+  );
+
+  const sharedMetadataResult = useQuery(
+    ["shared-metadata", ids],
+    () => metadata.getTokenMetadata({ ids }),
+    {
+      enabled: !!ids && isShared,
+      refetchInterval: false,
+      keepPreviousData: true,
+      select: (data) => {
+        switch (collectionName) {
+          case "Tales of Elleria": {
+            return {
+              tokens: data.tokens.map((token) => {
+                const attributes = token.attributes.reduce((acc, attribute) => {
+                  acc[attribute.name.replace(/ /g, "")] = attribute;
+
+                  return acc;
+                }, {} as Record<string, Attribute>);
+
+                return {
+                  ...token,
+                  attributes: [
+                    attributes.Class,
+                    attributes.Rarity,
+                    attributes.Level,
+                    ...[
+                      [attributes.Strength, attributes.MaxStrength],
+                      [attributes.Agility, attributes.MaxAgility],
+                      [attributes.Vitality, attributes.MaxVitality],
+                      [attributes.Endurance, attributes.MaxEndurance],
+                      [attributes.Intelligence, attributes.MaxIntelligence],
+                      [attributes.Will, attributes.MaxWill],
+                      [attributes.TotalStats, attributes.MaxTotalStats],
+                    ].map(formatCurrentMaxAttribute),
+                  ],
+                };
+              }),
+            };
+          }
+          default:
+            return data;
+        }
+      },
+    }
+  );
+  const realmMetadataResult = useQuery(
+    ["realm-metadata", ids],
+    () =>
+      realm.getRealmMetadata({
+        ids: ids.map((item) => `${parseInt(item.slice(45), 16)}`),
+      }),
+    {
+      enabled: !!ids && isRealm,
+      refetchInterval: false,
+      keepPreviousData: true,
+      select: (data) => {
+        return data.realms.map((item) => {
+          const {
+            feature1,
+            feature2,
+            feature3,
+            metrics,
+            totalStructures: [
+              {
+                totalAquariums = "0",
+                totalCities = "0",
+                totalFarms = "0",
+                totalResearchLabs = "0",
+              } = {},
+            ],
+          } = item;
+          const image = "/img/realm.png";
+          const name = `Realm #${item.id}`;
+          const id = `${collection.address}-0x${parseInt(item.id, 16)}`;
+          const attributes = [
+            { name: "Feature 1", value: feature1 },
+            { name: "Feature 2", value: feature2 },
+            { name: "Feature 3", value: feature3 },
+            { name: "Aquariums", value: totalAquariums },
+            { name: "Cities", value: totalCities },
+            { name: "Farms", value: totalFarms },
+            { name: "Research Labs", value: totalResearchLabs },
+            ...[...metrics, ...REALM_EMPTY_METRICS]
+              .filter(
+                (metric, index, array) =>
+                  array.findIndex((item) => item.name === metric.name) === index
+              )
+              .filter((metric) => REALM_METRIC_NAMES.includes(metric.name))
+              .map(({ name, totalAmount: value }) => ({ name, value })),
+          ];
+
+          return { attributes, id, image, name };
+        });
+      },
+    }
+  );
+
+  const battleflyMetadataResult = useBattleflyMetadata(
+    isBattleflyItem && id ? [id] : []
+  );
+
+  const foundersMetadataResult = useFoundersMetadata(
+    isFoundersItem && id ? [id] : []
+  );
+
+  const smithoniaMetadataResult = useSmithoniaWeaponsMetadata(
+    isSmithonia && id ? [id] : []
+  );
+
+  const data = {
+    battlefly: battleflyMetadataResult.data?.[0],
+    bridgeworld: bridgeworldMetadataResult.data,
+    legacy: legacyMetadataResult.data,
+    founders: foundersMetadataResult.data?.[0],
+    realm: realmMetadataResult.data,
+    shared: sharedMetadataResult.data,
+    smithonia: smithoniaMetadataResult.data?.[0],
+    smolverse: smolverseMetadataResult.data,
+    token: tokenMetadataResult.data,
+  };
+
+  const getMetadata = useCallback(
+    (
+      battleflyMetadata?: Metadata,
+      bridgeworldMetadata?: Metadata,
+      foundersMetadata?: Metadata,
+      legacyMetadata?: Metadata,
+      sharedMetadata?: Metadata,
+      realmMetadata?: Metadata,
+      smolverseMetadata?: Metadata,
+      smithoniaMetadata?: Metadata,
+      tokenMetadata?: Metadata
+    ) => {
+      const metadata = bridgeworldMetadata
+        ? normalizeBridgeworldTokenMetadata(
+            bridgeworldMetadata as GetBridgeworldMetadataQuery["tokens"][number]
+          )
+        : smolverseMetadata
+        ? {
+            id: smolverseMetadata.id,
+            description: collectionName,
+            image: smolverseMetadata.image,
+            name: smolverseMetadata.name,
+            attributes: smolverseMetadata.attributes?.map((attribute) => ({
+              attribute,
+            })),
+          }
+        : sharedMetadata
+        ? {
+            id: sharedMetadata.id,
+            description: collectionName,
+            image: sharedMetadata.image,
+            name: sharedMetadata.name,
+            attributes: sharedMetadata.attributes?.map((attribute) => ({
+              attribute,
+            })),
+          }
+        : realmMetadata
+        ? {
+            id: realmMetadata.id,
+            description: collectionName,
+            image: realmMetadata.image,
+            name: realmMetadata.name,
+            attributes: realmMetadata.attributes?.map((attribute) => ({
+              attribute,
+            })),
+          }
+        : tokenMetadata ??
+          legacyMetadata ??
+          foundersMetadata ??
+          battleflyMetadata ??
+          smithoniaMetadata ??
+          null;
+
+      return metadata;
+    },
+    [collectionName]
+  );
+
+  const allMetadataLoaded =
+    isBridgeworldItem || isTreasureItem
+      ? !bridgeworldMetadataResult.isLoading && !!bridgeworldMetadataResult.data
+      : isSmolverseItem
+      ? !smolverseMetadataResult.isLoading && !!smolverseMetadataResult.data
+      : isShared
+      ? !sharedMetadataResult.isLoading && !!sharedMetadataResult.data
+      : isRealm
+      ? !realmMetadataResult.isLoading && !!realmMetadataResult.data
+      : isBattleflyItem
+      ? !battleflyMetadataResult.isLoading && !!battleflyMetadataResult.data
+      : isFoundersItem
+      ? !foundersMetadataResult.isLoading && !!foundersMetadataResult.data
+      : isSmithonia
+      ? !smithoniaMetadataResult.isLoading && !!smithoniaMetadataResult.data
+      : !legacyMetadataResult.isLoading && !!legacyMetadataResult.data && !!id
+      ? !tokenMetadataResult.isLoading && !!tokenMetadataResult.data
+      : true;
+
+  return { allMetadataLoaded, data, getMetadata };
+}

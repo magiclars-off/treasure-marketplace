@@ -10,30 +10,33 @@ import {
 } from "react";
 import { Dialog, Transition, Listbox } from "@headlessui/react";
 import { XIcon } from "@heroicons/react/outline";
-import { SelectorIcon, CheckIcon } from "@heroicons/react/solid";
+import { SelectorIcon, CheckIcon, ViewGridIcon } from "@heroicons/react/solid";
 import { ExclamationIcon } from "@heroicons/react/outline";
 import classNames from "clsx";
-import { bridgeworld, client, marketplace } from "../../lib/client";
+import {
+  bridgeworld,
+  client,
+  marketplace,
+  metadata,
+  realm,
+  smolverse,
+} from "../../lib/client";
 import { useQuery } from "react-query";
-import { addMonths, addWeeks, closestIndexTo } from "date-fns";
+import { addMonths, addWeeks, closestIndexTo, isAfter } from "date-fns";
 import { ethers } from "ethers";
 import {
   useApproveContract,
-  useChainId,
+  useBattleflyMetadata,
+  useCollections,
   useContractApprovals,
   useCreateListing,
+  useFoundersMetadata,
   useRemoveListing,
+  useSmithoniaWeaponsMetadata,
   useUpdateListing,
 } from "../../lib/hooks";
-import { useEthers } from "@usedapp/core";
 import { AddressZero } from "@ethersproject/constants";
-import {
-  formatNumber,
-  generateIpfsLink,
-  getCollectionNameFromAddress,
-  getCollectionSlugFromName,
-  getPetsMetadata,
-} from "../../utils";
+import { formatNumber, generateIpfsLink } from "../../utils";
 import { useRouter } from "next/router";
 import Button from "../../components/Button";
 import ImageWrapper from "../../components/ImageWrapper";
@@ -41,9 +44,26 @@ import Link from "next/link";
 import { CenterLoadingDots } from "../../components/CenterLoadingDots";
 import { formatEther } from "ethers/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { BridgeworldItems, FEE, USER_SHARE } from "../../const";
+import {
+  BridgeworldItems,
+  FEE,
+  METADATA_COLLECTIONS,
+  smolverseItems,
+  USER_SHARE,
+} from "../../const";
 import { TokenStandard } from "../../../generated/queries.graphql";
 import { useMagic } from "../../context/magicContext";
+import { Activity } from "../../components/Activity";
+import { Modal } from "../../components/Modal";
+import { useEthers } from "@usedapp/core";
+import {
+  Filters,
+  MobileFilterButton,
+  MobileFiltersWrapper,
+  useFilters,
+  useFiltersList,
+} from "../../components/Filters";
+import LargeGridIcon from "../../components/LargeGridIcon";
 
 type DrawerProps = {
   actions: Array<"create" | "remove" | "update">;
@@ -61,6 +81,12 @@ type InventoryToken = {
   };
 };
 
+type PriceToFloor =
+  | { status: "not-set" }
+  | { status: "exact" }
+  | { status: "above"; value: number }
+  | { status: "below"; value: number };
+
 const dates = [
   { id: 1, label: "1 Week", value: addWeeks(new Date(), 1) },
   { id: 2, label: "2 Weeks", value: addWeeks(new Date(), 2) },
@@ -70,12 +96,37 @@ const dates = [
 
 const defaultTabs = [
   { name: "Collected", href: "/inventory" },
+  { name: "Activity", href: "/inventory/activity" },
   { name: "Listed", href: "/inventory/listed" },
-  { name: "Sold", href: "/inventory/sold" },
 ];
 
 const startCase = (text: string) =>
   text.slice(0, 1).toUpperCase().concat(text.slice(1));
+
+function WarningModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal onClose={onClose} isOpen={isOpen} title="Warning" zIndex="50">
+      <div className="mt-6 text-xs text-gray-700 dark:text-gray-300">
+        <p>
+          The current listing price is 10% or more below the current floor
+          price.
+        </p>
+      </div>
+      <Button
+        className="mt-6 w-full inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm disabled:opacity-30 disabled:pointer-events-none"
+        onClick={onClose}
+      >
+        Okay
+      </Button>
+    </Modal>
+  );
+}
 
 const Drawer = ({
   actions,
@@ -99,8 +150,11 @@ const Drawer = ({
         ]
       : dates[3]
   );
-  const [priceBelowFloorWarning, setPriceBelowFloorWarning] = useState(false);
-  const [show, toggle] = useReducer((value) => !value, true);
+  const [priceToFloor, setPriceToFloor] = useState<PriceToFloor>({
+    status: "not-set",
+  });
+  const [showDrawer, toggleDrawer] = useReducer((value) => !value, true);
+  const [showModal, setShowModal] = useState(false);
 
   const approveContract = useApproveContract(nft.address, nft.standard);
   const createListing = useCreateListing();
@@ -116,15 +170,31 @@ const Drawer = ({
       updateListing.state.status,
     ].includes("Mining");
 
-  const { data: statData } = useQuery(
-    ["stats", nft.collectionId],
+  const floorPrice = useQuery(
+    ["floor-price", nft.collectionId, nft.tokenId],
     () =>
-      marketplace.getCollectionStats({
-        id: nft.collectionId,
+      marketplace.getFloorPrice({
+        collection: nft.collectionId,
+        tokenId: nft.tokenId,
       }),
     {
-      enabled: !!nft.collectionId,
+      select: ({ collection }) => {
+        if (!collection) {
+          return "0";
+        }
+
+        return (
+          (collection.standard === TokenStandard.ERC1155
+            ? collection.tokens[0].floorPrice
+            : collection.floorPrice) ?? "0"
+        );
+      },
     }
+  );
+
+  const floorThreshold = useMemo(
+    () => Number(floorPrice?.data ?? "0") / 10 ** 18,
+    [floorPrice?.data]
   );
 
   useEffect(() => {
@@ -135,7 +205,7 @@ const Drawer = ({
         updateListing.state.status,
       ].includes("Success")
     ) {
-      toggle();
+      toggleDrawer();
     }
   }, [
     createListing.state.status,
@@ -143,12 +213,25 @@ const Drawer = ({
     updateListing.state.status,
   ]);
 
+  useEffect(() => {
+    const difference = floorThreshold - Number(price || "0");
+    const percentage = difference / floorThreshold;
+
+    setPriceToFloor(
+      price
+        ? difference === 0
+          ? { status: "exact" }
+          : { status: difference > 0 ? "below" : "above", value: percentage }
+        : { status: "not-set" }
+    );
+  }, [floorThreshold, price]);
+
   return (
-    <Transition.Root appear show={show} as={Fragment}>
+    <Transition.Root appear show={showDrawer} as={Fragment}>
       <Dialog
         as="div"
         className="fixed inset-0 overflow-hidden z-50"
-        onClose={toggle}
+        onClose={toggleDrawer}
       >
         <div className="absolute inset-0 overflow-hidden">
           <Dialog.Overlay className="absolute inset-0 bg-gray-300 dark:bg-gray-600 opacity-60" />
@@ -176,7 +259,7 @@ const Drawer = ({
                         <button
                           type="button"
                           className="bg-white dark:bg-transparent rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                          onClick={toggle}
+                          onClick={toggleDrawer}
                         >
                           <span className="sr-only">Close panel</span>
                           <XIcon className="h-6 w-6" aria-hidden="true" />
@@ -207,6 +290,11 @@ const Drawer = ({
                         </div>
                       </div>
 
+                      <WarningModal
+                        isOpen={showModal}
+                        onClose={() => setShowModal(false)}
+                      />
+
                       {needsContractApproval ? (
                         <Button
                           isLoading={approveContract.state.status === "Mining"}
@@ -220,18 +308,29 @@ const Drawer = ({
                         <>
                           <div className="space-y-4">
                             <div>
-                              <label
-                                htmlFor="price"
-                                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                              >
-                                Price
-                                {nft.standard === TokenStandard.ERC1155
-                                  ? " Per Item"
-                                  : ""}
-                              </label>
-                              <p className="text-xs text-gray-500 my-1">
-                                * No need for decimals as a separator.
-                              </p>
+                              <div className="flex justify-between text-sm font-medium">
+                                <label
+                                  htmlFor="price"
+                                  className="text-gray-700 dark:text-gray-300"
+                                >
+                                  Price
+                                  {nft.standard === TokenStandard.ERC1155
+                                    ? " Per Item"
+                                    : ""}
+                                </label>
+                                <button
+                                  className="text-gray-500 dark:text-gray-400 transition-colors duration-300 motion-reduce:transition-none hover:text-red-500"
+                                  onClick={() =>
+                                    setPrice(
+                                      formatEther(
+                                        floorPrice?.data ?? "0"
+                                      ).replace(/\.0$/, "")
+                                    )
+                                  }
+                                >
+                                  Floor price
+                                </button>
+                              </div>
                               <div className="mt-1 relative rounded-md shadow-sm">
                                 <input
                                   type="number"
@@ -246,22 +345,24 @@ const Drawer = ({
                                   onWheel={(event) =>
                                     (event.target as HTMLInputElement).blur()
                                   }
+                                  onBlur={() => {
+                                    if (
+                                      priceToFloor.status === "below" &&
+                                      priceToFloor.value >= 0.1
+                                    ) {
+                                      setShowModal(true);
+                                    }
+                                  }}
                                   onChange={(event) => {
                                     const { value, maxLength } = event.target;
                                     const price = value.slice(0, maxLength);
                                     const emptyPrice = price === "";
+
                                     setPrice(
                                       emptyPrice
                                         ? ""
                                         : String(Math.abs(parseFloat(price)))
                                     );
-
-                                    const warning =
-                                      !emptyPrice &&
-                                      Number(price) <
-                                        statData?.collection?.floorPrice /
-                                          10 ** 18;
-                                    setPriceBelowFloorWarning(warning);
                                   }}
                                   value={price}
                                   disabled={isFormDisabled}
@@ -276,10 +377,8 @@ const Drawer = ({
                                 </div>
                               </div>
                               <p className="flex text-red-600 text-[0.75rem] mt-1 h-[1rem]">
-                                {priceBelowFloorWarning &&
-                                  `Price is below floor of ${
-                                    statData?.collection?.floorPrice / 10 ** 18
-                                  } $MAGIC`}
+                                {priceToFloor.status === "below" &&
+                                  `Price is below floor of ${floorThreshold} $MAGIC`}
                               </p>
                             </div>
                             <div>
@@ -368,9 +467,19 @@ const Drawer = ({
                                   onChange={setQuantity}
                                   disabled={isFormDisabled}
                                 >
-                                  <Listbox.Label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Quantity
-                                  </Listbox.Label>
+                                  <div className="flex justify-between text-sm font-medium">
+                                    <Listbox.Label className="text-gray-700 dark:text-gray-300">
+                                      Quantity
+                                    </Listbox.Label>
+                                    <button
+                                      className="text-gray-500 dark:text-gray-400 transition-colors duration-300 motion-reduce:transition-none hover:text-red-500"
+                                      onClick={() =>
+                                        setQuantity(Number(nft.total ?? 0))
+                                      }
+                                    >
+                                      Max
+                                    </button>
+                                  </div>
                                   <div className="mt-1 relative">
                                     <Listbox.Button className="bg-white relative w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:disabled:bg-gray-500 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 dark:focus:ring-gray-300 dark:focus:border-gray-300 sm:text-sm disabled:text-gray-300 disabled:cursor-not-allowed transition-text ease-linear duration-300">
                                       <span className="block truncate">
@@ -459,7 +568,10 @@ const Drawer = ({
                                 Royalties ({FEE * 100 + "%"})
                               </p>
                               <p>
-                                ≈ {formatNumber(parseFloat(price || "0") * FEE)}{" "}
+                                ≈{" "}
+                                {formatNumber(
+                                  parseFloat(price || "0") * FEE * +quantity
+                                )}{" "}
                                 $MAGIC
                               </p>
                             </div>
@@ -471,7 +583,9 @@ const Drawer = ({
                                 <p>
                                   ≈{" "}
                                   {formatNumber(
-                                    parseFloat(price || "0") * USER_SHARE
+                                    parseFloat(price || "0") *
+                                      USER_SHARE *
+                                      +quantity
                                   )}{" "}
                                   $MAGIC
                                 </p>
@@ -590,13 +704,13 @@ const Drawer = ({
 
 const Inventory = () => {
   const router = useRouter();
-  const chainId = useChainId();
   const [nft, setNft] = useState<Nft | null>(null);
+  const [toggleGrid, setToggleGrid] = useState(false);
   const { account } = useEthers();
   const [section] = router.query.section ?? [""];
 
   const inventory = useQuery(
-    "inventory",
+    ["inventory"],
     () =>
       marketplace.getUserInventory({
         id: account?.toLowerCase() ?? AddressZero,
@@ -604,18 +718,22 @@ const Inventory = () => {
     { enabled: !!account, refetchInterval: 30_000 }
   );
 
+  const allCollections = useCollections();
+  const filters = useFilters();
+
   const [data, totals, updates, emptyMessage] = useMemo(() => {
     const empty: Record<
       string,
       NonNullable<Nft["listing"] & { status: "None" }>
     > = {};
+
     const {
       inactive = [],
       listings = [],
-      sold = [],
       tokens = [],
       staked = [],
     } = inventory.data?.user ?? {};
+
     const totals = tokens.reduce<Record<string, number>>((acc, value) => {
       const { collection, tokenId } = value.token;
       const key = `${collection.contract}-${tokenId}`;
@@ -625,6 +743,7 @@ const Inventory = () => {
 
       return acc;
     }, {});
+
     const updates = tokens.reduce<
       Record<
         string,
@@ -646,8 +765,8 @@ const Inventory = () => {
 
       if (listing || inactiveListing) {
         const {
-          expires,
-          pricePerItem,
+          expires = "",
+          pricePerItem = "",
           quantity = 1,
         } = listing ?? inactiveListing ?? {};
 
@@ -661,42 +780,79 @@ const Inventory = () => {
 
       return acc;
     }, {});
+
+    const collections =
+      filters?.Collections ??
+      allCollections.map((collection) => collection.name);
+
     // Filter out staked tokens until we have UI to handle it
-    const filtered = tokens.filter(
-      (token) => !staked.some((stake) => stake.token.id === token.token.id)
-    );
+    const filtered = tokens
+      .filter(
+        (token) => !staked.some((stake) => stake.token.id === token.token.id)
+      )
+      .filter(({ token }) => collections.includes(token.collection.name));
 
     switch (section) {
       case "inactive":
         return [inactive, totals, updates, "No inactive listings 🙂"] as const;
       case "listed":
         return [listings, totals, empty, "No NFTs listed 🙂"] as const;
-      case "sold":
-        return [sold, totals, empty, null] as const;
       default:
         return [filtered, totals, updates, null] as const;
     }
-  }, [inventory.data?.user, section]);
+  }, [allCollections, inventory.data?.user, filters, section]);
 
-  const tokens = (data as InventoryToken[])
-    .filter(
-      ({ token }) =>
-        !BridgeworldItems.includes(
-          getCollectionNameFromAddress(token.collection.id, chainId) || ""
-        )
-    )
-    .map(({ token }) => token.id);
+  const {
+    tokens,
+    battleflyTokens,
+    bridgeworldTokens,
+    foundersTokens,
+    smolverseTokens,
+    metadataTokens,
+    realmTokens,
+    smithoniaTokens,
+  } = useMemo(() => {
+    return (data as InventoryToken[]).reduce(
+      (acc, { token }) => {
+        const collectionName =
+          allCollections.find(({ id }) => id === token.collection.id)?.name ??
+          "";
 
-  const bridgeworldTokens = (data as InventoryToken[])
-    .filter(({ token }) =>
-      BridgeworldItems.includes(
-        getCollectionNameFromAddress(token.collection.id, chainId) || ""
-      )
-    )
-    .map(({ token }) => token.id);
+        if (BridgeworldItems.includes(collectionName)) {
+          acc.bridgeworldTokens.push(token.id);
+        } else if (smolverseItems.includes(collectionName)) {
+          acc.smolverseTokens.push(token.id);
+        } else if (METADATA_COLLECTIONS.includes(collectionName)) {
+          acc.metadataTokens.push(token.id);
+        } else if (collectionName === "Realm") {
+          acc.realmTokens.push(token.id);
+        } else if (collectionName === "Smithonia Weapons") {
+          acc.smithoniaTokens.push(token.id);
+        } else if (collectionName === "BattleFly") {
+          acc.battleflyTokens.push(token.id);
+        } else if (collectionName.startsWith("BattleFly")) {
+          acc.foundersTokens.push(token.id);
+        } else {
+          acc.tokens.push(token.id);
+        }
+
+        return acc;
+      },
+      {
+        tokens: [] as string[],
+        battleflyTokens: [] as string[],
+        bridgeworldTokens: [] as string[],
+        foundersTokens: [] as string[],
+        smolverseTokens: [] as string[],
+        metadataTokens: [] as string[],
+        realmTokens: [] as string[],
+        smithoniaTokens: [] as string[],
+      }
+    );
+  }, [allCollections, data]);
 
   const { data: metadataData } = useQuery(
-    ["inventory-metadata", tokens],
+    ["metadata", tokens],
     () => client.getTokensMetadata({ ids: tokens }),
     {
       enabled: tokens.length > 0,
@@ -705,13 +861,47 @@ const Inventory = () => {
   );
 
   const { data: bridgeworldMetadata } = useQuery(
-    ["inventory-metadata-bridgeworld", bridgeworldTokens],
+    ["metadata-bridgeworld", bridgeworldTokens],
     () => bridgeworld.getBridgeworldMetadata({ ids: bridgeworldTokens }),
     {
       enabled: bridgeworldTokens.length > 0,
       refetchInterval: false,
     }
   );
+
+  const { data: smolverseMetadata } = useQuery(
+    ["metadata-smolverse", smolverseTokens],
+    () => smolverse.getSmolverseMetadata({ ids: smolverseTokens }),
+    {
+      enabled: smolverseTokens.length > 0,
+      refetchInterval: false,
+    }
+  );
+
+  const { data: sharedMetadata } = useQuery(
+    ["metadata-shared", metadataTokens],
+    () => metadata.getTokenMetadata({ ids: metadataTokens }),
+    {
+      enabled: metadataTokens.length > 0,
+      refetchInterval: false,
+    }
+  );
+
+  const { data: realmMetadata } = useQuery(
+    ["metadata-realm", realmTokens],
+    () =>
+      realm.getRealmMetadata({
+        ids: realmTokens.map((item) => `${parseInt(item.slice(45), 16)}`),
+      }),
+    {
+      enabled: realmTokens.length > 0,
+      refetchInterval: false,
+    }
+  );
+
+  const battleflyMetadata = useBattleflyMetadata(battleflyTokens);
+  const foundersMetadata = useFoundersMetadata(foundersTokens);
+  const smithoniaWeaponsMetadata = useSmithoniaWeaponsMetadata(smithoniaTokens);
 
   const tabs = useMemo(() => {
     if (inventory.data?.user?.inactive.length) {
@@ -733,294 +923,470 @@ const Inventory = () => {
   );
 
   const onClose = useCallback(() => setNft(null), []);
+  const attributeFilterList = useFiltersList();
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden pt-24">
-      <div className="flex-1 flex items-stretch overflow-hidden">
-        <main className="flex-1 overflow-y-auto">
-          <div className="pt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="flex-1 text-2xl font-bold text-gray-900 dark:text-gray-200">
-              Inventory
-            </h1>
+    <main>
+      <MobileFiltersWrapper />
+      <div className="flex-1 flex flex-col overflow-hidden pt-24">
+        <div className="flex-1 flex items-stretch overflow-hidden">
+          <main className="flex-1 overflow-y-auto">
+            <div className="pt-8 mx-auto px-4 sm:px-6 lg:px-8">
+              <h1 className="flex-1 text-2xl font-bold text-gray-900 dark:text-gray-200">
+                Inventory
+              </h1>
 
-            <div className="mt-3 sm:mt-2">
-              <div className="block">
-                <div className="flex items-center border-b border-gray-200 dark:border-gray-500">
-                  <nav
-                    className="flex-1 -mb-px flex space-x-6 xl:space-x-8"
-                    aria-label="Tabs"
-                  >
-                    {tabs.map((tab) => {
-                      const isCurrentTab =
-                        section === tab.href.replace(/\/inventory\/?/, "");
+              <div className="mt-3 sm:mt-2">
+                <div className="block">
+                  <div className="flex items-center border-b border-gray-200 dark:border-gray-500">
+                    <nav
+                      className="flex-1 -mb-px flex space-x-6 xl:space-x-8"
+                      aria-label="Tabs"
+                    >
+                      {tabs.map((tab) => {
+                        const isCurrentTab =
+                          section === tab.href.replace(/\/inventory\/?/, "");
 
-                      return (
-                        <Link key={tab.name} href={tab.href} passHref>
-                          <a
-                            aria-current={isCurrentTab ? "page" : undefined}
-                            className={classNames(
-                              isCurrentTab
-                                ? "border-red-500 text-red-600 dark:border-gray-300 dark:text-gray-300"
-                                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:hover:border-gray-500",
-                              "whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-                            )}
-                          >
-                            {tab.name}
-                          </a>
-                        </Link>
-                      );
-                    })}
-                  </nav>
+                        return (
+                          <Link key={tab.name} href={tab.href} passHref>
+                            <a
+                              aria-current={isCurrentTab ? "page" : undefined}
+                              className={classNames(
+                                isCurrentTab
+                                  ? "border-red-500 text-red-600 dark:border-gray-300 dark:text-gray-300"
+                                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:hover:border-gray-500",
+                                "whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+                              )}
+                            >
+                              {tab.name}
+                            </a>
+                          </Link>
+                        );
+                      })}
+                    </nav>
+                    {section === "" ? (
+                      <>
+                        <MobileFilterButton />
+                        <button
+                          type="button"
+                          className="hidden lg:p-2 lg:m-2 lg:text-gray-400 lg:hover:text-gray-500 lg:flex"
+                          onClick={() => setToggleGrid(!toggleGrid)}
+                        >
+                          {toggleGrid ? (
+                            <LargeGridIcon aria-hidden="true" />
+                          ) : (
+                            <ViewGridIcon
+                              className="w-5 h-5"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={classNames(
+                  section === ""
+                    ? "grid grid-cols-1 lg:grid-cols-4 gap-x-8 gap-y-10"
+                    : ""
+                )}
+              >
+                {section === "" ? (
+                  <div className="hidden lg:block sticky top-6">
+                    <Filters />
+                  </div>
+                ) : null}
+
+                <div
+                  className={classNames(
+                    attributeFilterList ? "lg:col-span-3" : "lg:col-span-4"
+                  )}
+                >
+                  {section === "inactive" && (
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-4">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <ExclamationIcon
+                            className="h-5 w-5 text-yellow-400"
+                            aria-hidden="true"
+                          />
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-[0.7rem] text-left lg:text-xs text-yellow-700">
+                            Items that were listed while staked or transferred
+                            will appear here. They will reappear as listings
+                            when you unstake them so delist if you don&apos;t
+                            want to sell them at the original price you listed
+                            for.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {section == "activity" ? (
+                    <Activity includeStatus />
+                  ) : (
+                    <section className="mt-8 pb-16">
+                      {inventory.isLoading && (
+                        <CenterLoadingDots className="h-36" />
+                      )}
+                      {data.length === 0 && !inventory.isLoading && (
+                        <div className="flex flex-col justify-center items-center h-36">
+                          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200">
+                            {emptyMessage ??
+                              `No NFTs ${
+                                section.length === 0 ? "collected" : section
+                              } 😞`}
+                          </h3>
+                        </div>
+                      )}
+                      {data.length > 0 && (
+                        <ul
+                          role="list"
+                          className={classNames(
+                            "grid grid-cols-2 gap-y-10 md:grid-cols-4 gap-x-6 xl:gap-x-8",
+                            section === ""
+                              ? toggleGrid
+                                ? "lg:grid-cols-6"
+                                : "lg:grid-cols-4"
+                              : ""
+                          )}
+                        >
+                          {data.map(({ id, quantity, token, ...item }) => {
+                            const { slug = "" } =
+                              allCollections.find(
+                                ({ name }) => name === token.collection.name
+                              ) ?? {};
+                            const slugOrAddress = slug
+                              ? slug
+                              : token.collection.id;
+
+                            const bwMetadata = bridgeworldMetadata?.tokens.find(
+                              (item) => item.id === token.id
+                            );
+                            const smolMetadata = smolverseMetadata?.tokens.find(
+                              (item) => item.id === token.id
+                            );
+                            const shrdMetadata = sharedMetadata?.tokens.find(
+                              (item) => item.id === token.id
+                            );
+                            const rlmMetadata = realmMetadata?.realms.find(
+                              (item) => item.id === token.tokenId
+                            );
+                            const bfMetadata = battleflyMetadata.data?.find(
+                              (item) => item.id === token.id
+                            );
+                            const fsMetadata = foundersMetadata.data?.find(
+                              (item) => item.id === token.id
+                            );
+                            const swMetadata =
+                              smithoniaWeaponsMetadata.data?.find(
+                                (item) => item.id === token.tokenId
+                              );
+
+                            const metadata = bwMetadata
+                              ? {
+                                  id: bwMetadata.id,
+                                  name: bwMetadata.name,
+                                  tokenId: token.tokenId,
+                                  metadata: {
+                                    image: bwMetadata.image,
+                                    name: bwMetadata.name,
+                                    description: token.collection.name,
+                                  },
+                                }
+                              : smolMetadata
+                              ? {
+                                  id: smolMetadata.id,
+                                  name: smolMetadata.name,
+                                  tokenId: smolMetadata.tokenId,
+                                  metadata: {
+                                    image: smolMetadata.image ?? "",
+                                    name: smolMetadata.name,
+                                    description: token.collection.name,
+                                  },
+                                }
+                              : bfMetadata
+                              ? {
+                                  id: bfMetadata.id,
+                                  name: bfMetadata.name,
+                                  tokenId: token.tokenId,
+                                  metadata: {
+                                    image: bfMetadata.image ?? "",
+                                    name: bfMetadata.name,
+                                    description: token.collection.name,
+                                  },
+                                }
+                              : fsMetadata
+                              ? {
+                                  id: fsMetadata.id,
+                                  name: fsMetadata.name,
+                                  tokenId: token.tokenId,
+                                  metadata: {
+                                    image: fsMetadata.image ?? "",
+                                    name: fsMetadata.name,
+                                    description: token.collection.name,
+                                  },
+                                }
+                              : shrdMetadata
+                              ? {
+                                  id: shrdMetadata.id,
+                                  name: shrdMetadata.name,
+                                  tokenId: token.tokenId,
+                                  metadata: {
+                                    image: shrdMetadata.image ?? "",
+                                    name: shrdMetadata.name,
+                                    description: token.collection.name,
+                                  },
+                                }
+                              : swMetadata
+                              ? {
+                                  id: swMetadata.id,
+                                  name: swMetadata.name,
+                                  tokenId: token.tokenId,
+                                  metadata: {
+                                    image: swMetadata.image ?? "",
+                                    name: swMetadata.name,
+                                    description: token.collection.name,
+                                  },
+                                }
+                              : rlmMetadata
+                              ? {
+                                  id: rlmMetadata.id,
+                                  name: `${token.collection.name} #${token.tokenId}`,
+                                  tokenId: token.tokenId,
+                                  metadata: {
+                                    image: "/img/realm.png",
+                                    name: `${token.collection.name} #${token.tokenId}`,
+                                    description: token.collection.name,
+                                  },
+                                }
+                              : metadataData?.tokens.find(
+                                  (item) => item?.id === token.id
+                                );
+                            const { expires, pricePerItem } = {
+                              ...item,
+                              ...updates[
+                                `${token.collection.contract}-${token.tokenId}`
+                              ],
+                            };
+                            const {
+                              quantity: listedQuantity,
+                              status = "None",
+                            } =
+                              updates[
+                                `${token.collection.contract}-${token.tokenId}`
+                              ] ?? {};
+                            const buttonEnabled =
+                              section !== "sold" &&
+                              bwMetadata?.name !== "Recruit";
+
+                            return (
+                              <li key={id}>
+                                <div className="group block w-full aspect-w-1 aspect-h-1 rounded-sm overflow-hidden sm:aspect-w-3 sm:aspect-h-3 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-gray-100 focus-within:ring-red-500">
+                                  {metadata ? (
+                                    <ImageWrapper
+                                      className={classNames(
+                                        "object-fill object-center pointer-events-none",
+                                        {
+                                          "group-hover:opacity-80":
+                                            buttonEnabled,
+                                        }
+                                      )}
+                                      token={metadata}
+                                    />
+                                  ) : null}
+                                  {buttonEnabled ? (
+                                    <button
+                                      type="button"
+                                      className="absolute inset-0 focus:outline-none"
+                                      onClick={() =>
+                                        setNft({
+                                          address: token.collection.contract,
+                                          collection: token.collection.name,
+                                          collectionId: token.collection.id,
+                                          slug,
+                                          name: metadata?.name ?? "",
+                                          listing:
+                                            updates[
+                                              `${token.collection.contract}-${token.tokenId}`
+                                            ] ?? pricePerItem
+                                              ? {
+                                                  expires,
+                                                  pricePerItem,
+                                                  quantity,
+                                                }
+                                              : undefined,
+                                          source:
+                                            token.collection.name ===
+                                            "Smol Brains Land"
+                                              ? generateIpfsLink(
+                                                  "ipfs://QmUcEoYHwye65tsncGAtoz2bQLjQtrE2GiCa6L1PYNcbh7/0.png"
+                                                )
+                                              : metadata?.metadata?.image.includes(
+                                                  "ipfs"
+                                                )
+                                              ? generateIpfsLink(
+                                                  metadata?.metadata?.image
+                                                )
+                                              : metadata?.metadata?.image ?? "",
+                                          standard: token.collection.standard,
+                                          tokenId: token.tokenId,
+                                          total:
+                                            totals[
+                                              `${token.collection.contract}-${token.tokenId}`
+                                            ],
+                                        })
+                                      }
+                                    >
+                                      <span className="sr-only">
+                                        View details for{" "}
+                                        {bwMetadata?.name ?? token.name}
+                                      </span>
+                                    </button>
+                                  ) : null}
+                                </div>
+                                <div className="mt-4 flex items-center justify-between text-base font-medium text-gray-900">
+                                  <Link
+                                    href={`/collection/${slugOrAddress}`}
+                                    passHref
+                                  >
+                                    <a className="text-gray-500 dark:text-gray-400 font-thin tracking-wide uppercase text-[0.5rem] hover:underline">
+                                      {metadata?.metadata?.description}
+                                    </a>
+                                  </Link>
+                                  {pricePerItem && (
+                                    <p className="dark:text-gray-100">
+                                      {formatNumber(
+                                        parseFloat(formatEther(pricePerItem))
+                                      )}{" "}
+                                      <span className="text-xs font-light">
+                                        $MAGIC
+                                      </span>
+                                    </p>
+                                  )}
+                                  {!expires &&
+                                    !pricePerItem &&
+                                    quantity &&
+                                    token.collection.standard ===
+                                      TokenStandard.ERC1155 && (
+                                      <span className="text-gray-600 text-xs text-[0.6rem]">
+                                        <span className="text-gray-500 dark:text-gray-400">
+                                          Quantity:
+                                        </span>{" "}
+                                        <span className="font-bold text-gray-700 dark:text-gray-300">
+                                          {quantity}
+                                        </span>
+                                      </span>
+                                    )}
+                                </div>
+                                <div className="flex items-baseline justify-between mt-1">
+                                  <Link
+                                    href={`/collection/${slugOrAddress}/${token.tokenId}`}
+                                    passHref
+                                  >
+                                    <a className="text-xs text-gray-800 dark:text-gray-50 font-semibold truncate hover:underline">
+                                      {metadata?.name}
+                                    </a>
+                                  </Link>
+                                  {expires ? (
+                                    status === "Inactive" ? (
+                                      <p className="text-xs text-red-500 text-[0.6rem] ml-auto whitespace-nowrap">
+                                        Inactive
+                                      </p>
+                                    ) : isAfter(
+                                        new Date(),
+                                        new Date(Number(expires))
+                                      ) ? (
+                                      <p className="text-xs text-red-500 text-[0.6rem] ml-auto whitespace-nowrap">
+                                        Expired
+                                      </p>
+                                    ) : (
+                                      <p className="text-xs text-[0.6rem] ml-auto whitespace-nowrap">
+                                        <span className="text-gray-500 dark:text-gray-400">
+                                          Expires in:
+                                        </span>{" "}
+                                        <span className="font-bold text-gray-700 dark:text-gray-300">
+                                          {formatDistanceToNow(
+                                            new Date(Number(expires))
+                                          )}
+                                        </span>
+                                      </p>
+                                    )
+                                  ) : null}
+                                  {!expires &&
+                                    pricePerItem &&
+                                    quantity &&
+                                    token.collection.standard ===
+                                      TokenStandard.ERC1155 && (
+                                      <span className="text-gray-600 text-xs text-[0.6rem]">
+                                        <span className="text-gray-500 dark:text-gray-400">
+                                          Quantity:
+                                        </span>{" "}
+                                        <span className="font-bold text-gray-700 dark:text-gray-300">
+                                          {quantity}
+                                        </span>
+                                      </span>
+                                    )}
+                                </div>
+                                {expires &&
+                                quantity &&
+                                token.collection.standard ===
+                                  TokenStandard.ERC1155 ? (
+                                  <div
+                                    className={classNames(
+                                      "flex mt-1",
+                                      listedQuantity
+                                        ? "justify-between"
+                                        : "justify-end"
+                                    )}
+                                  >
+                                    <span className="text-gray-600 text-xs text-[0.6rem]">
+                                      <span className="text-gray-500 dark:text-gray-400">
+                                        Quantity:
+                                      </span>{" "}
+                                      <span className="font-bold text-gray-700 dark:text-gray-300">
+                                        {quantity}
+                                      </span>
+                                    </span>
+                                    {listedQuantity ? (
+                                      <span className="text-gray-600 text-xs text-[0.6rem]">
+                                        <span className="text-gray-500 dark:text-gray-400">
+                                          Listed:
+                                        </span>{" "}
+                                        <span className="font-bold text-gray-700 dark:text-gray-300">
+                                          {listedQuantity}
+                                        </span>
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                ) : null}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </section>
+                  )}
                 </div>
               </div>
             </div>
-            {section === "inactive" && (
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <ExclamationIcon
-                      className="h-5 w-5 text-yellow-400"
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-[0.7rem] text-left lg:text-xs text-yellow-700">
-                      Items that were listed while staked or transferred will
-                      appear here. They will reappear as listings when you
-                      unstake them so delist if you don&apos;t want to sell them
-                      at the original price you listed for.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            <section className="mt-8 pb-16">
-              {inventory.isLoading && <CenterLoadingDots className="h-36" />}
-              {data.length === 0 && !inventory.isLoading && (
-                <div className="flex flex-col justify-center items-center h-36">
-                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200">
-                    {emptyMessage ??
-                      `No NFTs ${
-                        section.length === 0 ? "collected" : section
-                      } 😞`}
-                  </h3>
-                </div>
-              )}
-              {data.length > 0 && (
-                <ul
-                  role="list"
-                  className="grid grid-cols-1 gap-y-10 sm:grid-cols-2 gap-x-6 lg:grid-cols-4 xl:gap-x-8"
-                >
-                  {data.map(({ id, quantity, token, ...item }) => {
-                    const slugOrAddress =
-                      getCollectionSlugFromName(token.collection.name) ??
-                      token.collection.id;
-                    const bwMetadata = bridgeworldMetadata?.tokens.find(
-                      (item) => item.id === token.id
-                    );
-                    const metadata = bwMetadata
-                      ? {
-                          id: bwMetadata.id,
-                          name: bwMetadata.name,
-                          tokenId: token.tokenId,
-                          metadata: {
-                            image: bwMetadata.image,
-                            name: bwMetadata.name,
-                            description: token.collection.name,
-                          },
-                        }
-                      : getPetsMetadata(token) ??
-                        metadataData?.tokens.find(
-                          (item) => item?.id === token.id
-                        );
-                    const { expires, pricePerItem } = {
-                      ...item,
-                      ...updates[
-                        `${token.collection.contract}-${token.tokenId}`
-                      ],
-                    };
-                    const { quantity: listedQuantity, status = "None" } =
-                      updates[
-                        `${token.collection.contract}-${token.tokenId}`
-                      ] ?? {};
-                    const buttonEnabled =
-                      section !== "sold" && bwMetadata?.name !== "Recruit";
+          </main>
 
-                    return (
-                      <li key={id}>
-                        <div className="group block w-full aspect-w-1 aspect-h-1 rounded-sm overflow-hidden sm:aspect-w-3 sm:aspect-h-3 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-gray-100 focus-within:ring-red-500">
-                          {metadata ? (
-                            <ImageWrapper
-                              className={classNames(
-                                "object-fill object-center pointer-events-none",
-                                {
-                                  "group-hover:opacity-80": buttonEnabled,
-                                }
-                              )}
-                              token={metadata}
-                            />
-                          ) : null}
-                          {buttonEnabled ? (
-                            <button
-                              type="button"
-                              className="absolute inset-0 focus:outline-none"
-                              onClick={() =>
-                                setNft({
-                                  address: token.collection.contract,
-                                  collection: token.collection.name,
-                                  collectionId: token.collection.id,
-                                  name: bwMetadata?.name ?? token.name ?? "",
-                                  listing:
-                                    updates[
-                                      `${token.collection.contract}-${token.tokenId}`
-                                    ] ?? pricePerItem
-                                      ? { expires, pricePerItem, quantity }
-                                      : undefined,
-                                  source: metadata?.metadata?.image.includes(
-                                    "ipfs"
-                                  )
-                                    ? generateIpfsLink(
-                                        metadata?.metadata?.image
-                                      )
-                                    : metadata?.metadata?.image ?? "",
-                                  standard: token.collection.standard,
-                                  tokenId: token.tokenId,
-                                  total:
-                                    totals[
-                                      `${token.collection.contract}-${token.tokenId}`
-                                    ],
-                                })
-                              }
-                            >
-                              <span className="sr-only">
-                                View details for{" "}
-                                {bwMetadata?.name ?? token.name}
-                              </span>
-                            </button>
-                          ) : null}
-                        </div>
-                        <div className="mt-4 flex items-center justify-between text-base font-medium text-gray-900">
-                          <Link href={`/collection/${slugOrAddress}`} passHref>
-                            <a className="text-gray-500 dark:text-gray-400 font-thin tracking-wide uppercase text-[0.5rem] hover:underline">
-                              {metadata?.metadata?.description}
-                            </a>
-                          </Link>
-                          {pricePerItem && (
-                            <p className="dark:text-gray-100">
-                              {formatNumber(
-                                parseFloat(formatEther(pricePerItem))
-                              )}{" "}
-                              <span className="text-xs font-light">$MAGIC</span>
-                            </p>
-                          )}
-                          {!expires &&
-                            !pricePerItem &&
-                            quantity &&
-                            token.collection.standard ===
-                              TokenStandard.ERC1155 && (
-                              <span className="text-gray-600 text-xs text-[0.6rem]">
-                                <span className="text-gray-500 dark:text-gray-400">
-                                  Quantity:
-                                </span>{" "}
-                                <span className="font-bold text-gray-700 dark:text-gray-300">
-                                  {quantity}
-                                </span>
-                              </span>
-                            )}
-                        </div>
-                        <div className="flex items-baseline justify-between mt-1">
-                          <Link
-                            href={`/collection/${slugOrAddress}/${token.tokenId}`}
-                            passHref
-                          >
-                            <a className="text-xs text-gray-800 dark:text-gray-50 font-semibold truncate hover:underline">
-                              {metadata?.name}
-                            </a>
-                          </Link>
-                          {expires ? (
-                            status === "Inactive" ? (
-                              <p className="text-xs text-red-500 text-[0.6rem] ml-auto whitespace-nowrap">
-                                Inactive
-                              </p>
-                            ) : (
-                              <p className="text-xs text-[0.6rem] ml-auto whitespace-nowrap">
-                                <span className="text-gray-500 dark:text-gray-400">
-                                  Expires in:
-                                </span>{" "}
-                                <span className="font-bold text-gray-700 dark:text-gray-300">
-                                  {formatDistanceToNow(
-                                    new Date(Number(expires))
-                                  )}
-                                </span>
-                              </p>
-                            )
-                          ) : null}
-                          {!expires &&
-                            pricePerItem &&
-                            quantity &&
-                            token.collection.standard ===
-                              TokenStandard.ERC1155 && (
-                              <span className="text-gray-600 text-xs text-[0.6rem]">
-                                <span className="text-gray-500 dark:text-gray-400">
-                                  Quantity:
-                                </span>{" "}
-                                <span className="font-bold text-gray-700 dark:text-gray-300">
-                                  {quantity}
-                                </span>
-                              </span>
-                            )}
-                        </div>
-                        {expires &&
-                          quantity &&
-                          token.collection.standard ===
-                            TokenStandard.ERC1155 && (
-                            <div
-                              className={classNames(
-                                "flex mt-1",
-                                listedQuantity
-                                  ? "justify-between"
-                                  : "justify-end"
-                              )}
-                            >
-                              <span className="text-gray-600 text-xs text-[0.6rem]">
-                                <span className="text-gray-500 dark:text-gray-400">
-                                  Quantity:
-                                </span>{" "}
-                                <span className="font-bold text-gray-700 dark:text-gray-300">
-                                  {quantity}
-                                </span>
-                              </span>
-                              {listedQuantity && (
-                                <span className="text-gray-600 text-xs text-[0.6rem]">
-                                  <span className="text-gray-500 dark:text-gray-400">
-                                    Listed:
-                                  </span>{" "}
-                                  <span className="font-bold text-gray-700 dark:text-gray-300">
-                                    {listedQuantity}
-                                  </span>
-                                </span>
-                              )}
-                            </div>
-                          )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-          </div>
-        </main>
-
-        {nft ? (
-          <Drawer
-            actions={nft.listing ? ["update", "remove"] : ["create"]}
-            needsContractApproval={!Boolean(approvals[nft.address])}
-            nft={nft}
-            onClose={onClose}
-          />
-        ) : null}
+          {nft ? (
+            <Drawer
+              actions={nft.listing ? ["update", "remove"] : ["create"]}
+              needsContractApproval={!Boolean(approvals[nft.address])}
+              nft={nft}
+              onClose={onClose}
+            />
+          ) : null}
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 

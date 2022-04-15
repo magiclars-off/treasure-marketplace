@@ -2,6 +2,10 @@ overwrite: true
 config:
   namingConvention:
     enumValues: keep
+  scalars:
+    BigDecimal: string
+    BigInt: string
+    Bytes: string
 generates:
   generated/bridgeworld.graphql.ts:
     schema: ${NEXT_PUBLIC_BRIDGEWORLD_SUBGRAPH}
@@ -20,6 +24,27 @@ generates:
   generated/marketplace.graphql.ts:
     schema: ${NEXT_PUBLIC_MARKETPLACE_SUBGRAPH}
     documents: "src/graphql/marketplace.graphql.ts"
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-graphql-request"
+  generated/smolverse.graphql.ts:
+    schema: ${NEXT_PUBLIC_SMOLVERSE_SUBGRAPH}
+    documents: "src/graphql/smolverse.graphql.ts"
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-graphql-request"
+  generated/metadata.graphql.ts:
+    schema: ${NEXT_PUBLIC_METADATA_SUBGRAPH}
+    documents: "src/graphql/metadata.graphql.ts"
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-graphql-request"
+  generated/realm.graphql.ts:
+    schema: ${NEXT_PUBLIC_REALM_SUBGRAPH}
+    documents: "src/graphql/realm.graphql.ts"
     plugins:
       - "typescript"
       - "typescript-operations"

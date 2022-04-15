@@ -98,6 +98,33 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "davidagustin",
+      "name": "David Agustin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/30575095?v=4",
+      "profile": "https://github.com/davidagustin",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "zelkibuilds",
+      "name": "zelkibuilds",
+      "avatar_url": "https://avatars.githubusercontent.com/u/94715286?v=4",
+      "profile": "https://github.com/zelkibuilds",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "caesarTheApe",
+      "name": "caesarTheApe",
+      "avatar_url": "https://avatars.githubusercontent.com/u/103601277?v=4",
+      "profile": "https://github.com/caesarTheApe",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

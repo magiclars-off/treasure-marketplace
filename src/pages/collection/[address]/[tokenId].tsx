@@ -5,6 +5,7 @@ import {
   CurrencyDollarIcon,
   ExternalLinkIcon,
   EyeOffIcon,
+  FilterIcon,
   ShoppingCartIcon,
   SwitchHorizontalIcon,
 } from "@heroicons/react/solid";
@@ -16,33 +17,26 @@ import {
   shortenIfAddress,
   useEthers,
   addressEqual,
-  useTokenAllowance,
-  TransactionStatus,
 } from "@usedapp/core";
 import Link from "next/link";
 import { useInfiniteQuery, useQuery, useQueryClient } from "react-query";
 import { useRouter } from "next/router";
-import { bridgeworld, client, marketplace } from "../../../lib/client";
+import { marketplace } from "../../../lib/client";
 import { AddressZero } from "@ethersproject/constants";
-import {
-  useApproveMagic,
-  useBuyItem,
-  useChainId,
-  useTransferNFT,
-} from "../../../lib/hooks";
+import { useCollection, useMetadata, useTransferNFT } from "../../../lib/hooks";
 import { CenterLoadingDots } from "../../../components/CenterLoadingDots";
 import {
   formatNumber,
   formatPercent,
   formatPrice,
   formattable,
-  getCollectionNameFromAddress,
-  getPetsMetadata,
-  slugToAddress,
+  generateIpfsLink,
 } from "../../../utils";
 import {
   GetTokenDetailsQuery,
   GetTokenExistsInWalletQuery,
+  Listing_OrderBy,
+  OrderDirection,
   Status,
   TokenStandard,
 } from "../../../../generated/marketplace.graphql";
@@ -53,41 +47,44 @@ import { useMagic } from "../../../context/magicContext";
 import { formatEther } from "ethers/lib/utils";
 import Button from "../../../components/Button";
 import { Modal } from "../../../components/Modal";
-import { BigNumber } from "@ethersproject/bignumber";
-import { BridgeworldItems, Contracts } from "../../../const";
-import { BridgeworldToken, targetNftT } from "../../../types";
+import { NormalizedMetadata, targetNftT } from "../../../types";
 import { Tooltip } from "../../../components/Tooltip";
 import { utils } from "ethers";
-import { EthIcon, SwapIcon, UsdIcon } from "../../../components/Icons";
-import { normalizeBridgeworldTokenMetadata } from "../../../utils/metadata";
+import { useDebounce } from "use-debounce";
+import { SortMenu } from "../../../components/SortMenu";
+import { PurchaseItemModal } from "../../../components/PurchaseItemModal";
+import { CurrencySwitcher } from "../../../components/CurrencySwitcher";
 import Metadata from "../../../components/Metadata";
 
 const MAX_ITEMS_PER_PAGE = 10;
 
-const CurrencySwitcher = ({ price }: { price: number }) => {
-  const [currency, setCurrency] = React.useState<"eth" | "usd">("eth");
-  const isEth = currency === "eth";
-  const { ethPrice, usdPrice } = useMagic();
-
-  return (
-    <div className="items-center inline-flex">
-      {!isEth && "$ "}
-      {formatNumber(price * parseFloat(isEth ? ethPrice : usdPrice))}
-      {isEth && " ETH"}
-      <button
-        className="flex ml-2 dark:text-gray-200 text-gray-500"
-        onClick={() => setCurrency(isEth ? "usd" : "eth")}
-      >
-        <SwapIcon className="h-4 w-4" />
-        {isEth ? (
-          <UsdIcon className="h-4 w-4" />
-        ) : (
-          <EthIcon className="h-4 w-4" />
-        )}
-      </button>
-    </div>
-  );
-};
+const sortOptions = [
+  {
+    name: "Price: Low to High",
+    direction: OrderDirection.asc,
+    value: Listing_OrderBy.pricePerItem,
+  },
+  {
+    name: "Price: High to Low",
+    direction: OrderDirection.desc,
+    value: Listing_OrderBy.pricePerItem,
+  },
+  {
+    name: "Quantity: Low to High",
+    direction: OrderDirection.asc,
+    value: Listing_OrderBy.quantity,
+  },
+  {
+    name: "Quantity: High to Low",
+    direction: OrderDirection.desc,
+    value: Listing_OrderBy.quantity,
+  },
+  {
+    name: "Latest",
+    value: Listing_OrderBy.blockTimestamp,
+    direction: OrderDirection.desc,
+  },
+];
 
 // const getRarity = (rank: number) => {
 //   if (rank >= 0 && rank <= 50) {
@@ -113,6 +110,12 @@ export default function TokenDetails() {
   const router = useRouter();
   const { account } = useEthers();
   const queryClient = useQueryClient();
+  const [quantity, setQuantity] = React.useState(0);
+  const [debouncedQuantity] = useDebounce(quantity, 300);
+  const [isFilterOpen, toggleFilterOpen] = React.useReducer(
+    (state: boolean) => !state,
+    false
+  );
 
   const { address: slugOrAddress, tokenId } = router.query;
   const [modalProps, setModalProps] = React.useState<{
@@ -126,15 +129,16 @@ export default function TokenDetails() {
     React.useState<boolean>(false);
   const { ethPrice } = useMagic();
 
-  const formattedTokenId = Array.isArray(tokenId) ? tokenId[0] : tokenId;
-  const chainId = useChainId();
+  const formattedTokenId = Array.isArray(tokenId) ? tokenId[0] : `${tokenId}`;
 
-  const formattedAddress = Array.isArray(slugOrAddress)
-    ? slugToAddress(slugOrAddress[0], chainId)
-    : slugToAddress(slugOrAddress?.toLowerCase() ?? AddressZero, chainId);
+  const {
+    id: formattedAddress,
+    name: collectionName,
+    slug,
+  } = useCollection(slugOrAddress);
 
-  const { data, isLoading, isIdle } = useQuery(
-    ["details", formattedAddress],
+  const { data, status } = useQuery(
+    ["details", formattedAddress, formattedTokenId],
     () =>
       marketplace.getTokenDetails({
         collectionId: formattedAddress,
@@ -142,12 +146,17 @@ export default function TokenDetails() {
       }),
     {
       enabled: formattedAddress !== AddressZero && Boolean(formattedTokenId),
-      refetchInterval: false,
+      keepPreviousData: true,
     }
   );
 
   const { data: tokenExistance } = useQuery(
-    "tokenExistance",
+    [
+      "tokenExistance",
+      formattedAddress,
+      formattedTokenId,
+      account?.toLowerCase(),
+    ],
     () =>
       marketplace.getTokenExistsInWallet({
         collectionId: formattedAddress,
@@ -161,16 +170,32 @@ export default function TokenDetails() {
     }
   );
 
+  const [sortBy, sortDirection] = (
+    typeof router.query.sort === "string"
+      ? router.query.sort.split(":")
+      : [sortOptions[0].value, sortOptions[0].direction]
+  ) as [Listing_OrderBy, OrderDirection];
+
   const {
     data: listingData,
     isLoading: isListingLoading,
     fetchNextPage,
   } = useInfiniteQuery(
-    "erc1155Listings",
+    [
+      "erc1155Listings",
+      formattedAddress,
+      formattedTokenId,
+      debouncedQuantity,
+      sortBy,
+      sortDirection,
+    ],
     ({ pageParam = 0 }) =>
       marketplace.getERC1155Listings({
         collectionId: formattedAddress,
         tokenId: formattedTokenId,
+        quantity: debouncedQuantity,
+        sortBy,
+        sortDirection,
         skipBy: pageParam,
         first: MAX_ITEMS_PER_PAGE,
       }),
@@ -201,8 +226,8 @@ export default function TokenDetails() {
   React.useEffect(() => {
     // Removing cache because old image remains in the cache, so a blink of the image is seen when doing client-side routing
     const handleRouteChange = () => {
-      queryClient.removeQueries("details");
-      queryClient.removeQueries("erc1155Listings");
+      queryClient.removeQueries(["details"]);
+      queryClient.removeQueries(["erc1155Listings"]);
     };
 
     router.events.on("routeChangeStart", handleRouteChange);
@@ -217,70 +242,55 @@ export default function TokenDetails() {
     listingData?.pages[0]?.tokens[0]?.listings &&
     listingData?.pages[0].tokens[0].listings.length > 0;
 
-  const { send, state } = useBuyItem();
-
-  React.useEffect(() => {
-    if (state.status === "Success") {
-      setModalProps({ isOpen: false, targetNft: null });
-    }
-  }, [state.status]);
-
   const tokenInfo =
     data && data?.collection?.tokens && data?.collection?.tokens.length > 0
       ? data.collection.tokens[0]
       : null;
   const id = tokenInfo?.id ?? "";
 
-  const collectionName =
-    getCollectionNameFromAddress(formattedAddress, chainId) ?? "";
-  const isBridgeworldItem = BridgeworldItems.includes(collectionName);
-  const isTreasure = collectionName === "Treasures";
-
-  const { data: metadataData, isLoading: metadataLoading } = useQuery(
-    ["details-metadata", id],
-    () => client.getTokenMetadata({ id }),
-    {
-      enabled: Boolean(id) && !isBridgeworldItem && !isTreasure,
-      refetchInterval: false,
-    }
-  );
-
   const {
-    data: BridgeworldMetadataData,
-    isLoading: bridgeworldMetadataLoading,
-  } = useQuery(
-    ["details-metadata-bridgeworld", id],
-    () => bridgeworld.getBridgeworldMetadata({ ids: [id] }),
-    {
-      enabled: Boolean(id) && (isBridgeworldItem || isTreasure),
-      refetchInterval: false,
-    }
-  );
-  const bridgeworldMetadata = BridgeworldMetadataData?.tokens?.[0] ?? null;
-  const legacyMetadata = metadataData?.token ?? null;
+    allMetadataLoaded,
+    data: metadataData,
+    getMetadata,
+  } = useMetadata(collectionName, {
+    id,
+    ids: [id],
+  });
 
-  const petsMetadata = getPetsMetadata({
-    ...tokenInfo,
-    collection: data?.collection ?? { name: "" },
-  } as any);
-  const metadata = bridgeworldMetadata
-    ? normalizeBridgeworldTokenMetadata(bridgeworldMetadata)
-    : legacyMetadata?.metadata
-    ? {
-        ...legacyMetadata.metadata,
-        description: legacyMetadata.metadata.description.replace(
-          "Legion",
-          "Legacy Legion"
-        ),
-      }
-    : (petsMetadata?.metadata as any) ?? null;
+  const bridgeworldMetadata = metadataData.bridgeworld?.tokens?.[0];
+  const smolverseMetadata = metadataData.smolverse?.tokens?.[0];
+  const sharedMetadata = metadataData.shared?.tokens?.[0];
+  const realmMetadata = metadataData.realm?.[0];
+  const tokenMetadata = metadataData.token?.token?.metadata ?? undefined;
 
-  const allMetadataLoaded =
-    isBridgeworldItem || isTreasure
-      ? !bridgeworldMetadataLoading && bridgeworldMetadata
-      : !metadataLoading && metadataData;
+  const metadata = getMetadata(
+    metadataData.battlefly,
+    bridgeworldMetadata,
+    metadataData.founders,
+    undefined,
+    sharedMetadata,
+    realmMetadata,
+    smolverseMetadata,
+    metadataData.smithonia,
+    tokenMetadata
+      ? { ...tokenInfo, ...tokenMetadata, name: tokenMetadata.name ?? "", id }
+      : undefined
+  ) as NormalizedMetadata;
 
-  const loading = isLoading || isIdle || !allMetadataLoaded;
+  const attributes = metadata
+    ? "attributes" in metadata
+      ? (metadata.attributes as {
+          attribute: {
+            id: string;
+            name: string;
+            value: string;
+            percentage?: string | null;
+          };
+        }[]) ?? []
+      : []
+    : [];
+
+  const loading = status === "loading" || !allMetadataLoaded;
 
   const isYourListing =
     data?.collection?.standard === TokenStandard.ERC721 &&
@@ -300,21 +310,22 @@ export default function TokenDetails() {
     (isYourListing && metadata?.name !== "Recruit") ||
     (data?.collection?.standard === TokenStandard.ERC1155 && hasErc1155Token);
 
+  const closePurchaseModal = React.useCallback(
+    () => setModalProps({ isOpen: false, targetNft: null }),
+    []
+  );
+
   return (
     <div className="pt-12">
       <Metadata
         title={
-          tokenInfo?.metadata
-            ? `${tokenInfo.metadata.description} - ${tokenInfo.metadata.name} (#${tokenInfo.tokenId})`
+          metadata
+            ? `${metadata.description} - ${metadata.name} (#${tokenId})`
             : undefined
         }
         description="NFT on Arbitrum native marketplace, created by TreasureDAO"
         url={window.location.href}
-        image={
-          tokenInfo?.metadata?.image
-            ? generateIpfsLink(tokenInfo.metadata.image)
-            : undefined
-        }
+        image={metadata?.image ? generateIpfsLink(metadata.image) : undefined}
       />
       <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:max-w-[96rem] lg:px-8 pt-12">
         {loading && <CenterLoadingDots className="h-96" />}
@@ -346,13 +357,12 @@ export default function TokenDetails() {
                     <ImageWrapper
                       token={{
                         name: metadata?.name,
-                        metadata:
-                          metadata?.description && metadata?.image
-                            ? {
-                                description: metadata.description,
-                                image: metadata.image,
-                              }
-                            : null,
+                        metadata: metadata?.image
+                          ? {
+                              description: metadata?.description ?? "",
+                              image: metadata.image,
+                            }
+                          : null,
                       }}
                     />
                   ) : null}
@@ -390,10 +400,9 @@ export default function TokenDetails() {
                           </Disclosure.Button>
                         </h3>
                         <Disclosure.Panel as="div">
-                          {metadata?.attributes &&
-                          metadata.attributes.length > 0 ? (
+                          {attributes.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                              {metadata?.attributes.map(({ attribute }) => {
+                              {attributes.map(({ attribute }) => {
                                 if (attribute.percentage == null) {
                                   return (
                                     <div className="border-2 border-red-400 dark:border-gray-400 rounded-md bg-red-200 dark:bg-gray-300 flex items-center flex-col py-2">
@@ -413,7 +422,8 @@ export default function TokenDetails() {
                                       pathname: `/collection/${slugOrAddress}`,
                                       query: {
                                         search: new URLSearchParams({
-                                          [attribute.name]: attribute.value,
+                                          [attribute.name]:
+                                            attribute.value.replace(/\/.+/, ""),
                                         }).toString(),
                                       },
                                     }}
@@ -537,12 +547,18 @@ export default function TokenDetails() {
                                 setModalProps({
                                   isOpen: true,
                                   targetNft: {
-                                    metadata,
+                                    metadata: {
+                                      image: metadata.image ?? "",
+                                      name: metadata.name ?? "",
+                                      description: metadata.description ?? "",
+                                    },
                                     payload: {
                                       ...tokenInfo.lowestPrice[0],
                                       standard: data.collection.standard,
                                       tokenId: tokenInfo.tokenId,
                                     },
+                                    slug,
+                                    collection: collectionName,
                                   },
                                 });
                               }
@@ -562,7 +578,10 @@ export default function TokenDetails() {
 
                 {data.collection.standard === TokenStandard.ERC1155 && (
                   <div className="mt-10">
-                    <p>Listings</p>
+                    <div className="flex items-baseline justify-between">
+                      Listings
+                      <SortMenu options={sortOptions} />
+                    </div>
                     {isListingLoading && <CenterLoadingDots className="h-60" />}
                     {!hasErc1155Listings && !isListingLoading && (
                       <div className="flex flex-col justify-center items-center h-12 mt-4">
@@ -578,7 +597,7 @@ export default function TokenDetails() {
                             <div className="shadow border-b border-gray-200 rounded-lg overflow-auto max-h-72">
                               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-400">
                                 <thead className="bg-gray-50 dark:bg-gray-500 sticky top-0 z-10">
-                                  <tr>
+                                  <tr className="h-[4.5rem]">
                                     <th
                                       scope="col"
                                       className="px-6 py-3 text-left text-[0.5rem] md:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap"
@@ -595,17 +614,40 @@ export default function TokenDetails() {
                                       scope="col"
                                       className="px-6 py-3 text-left text-[0.5rem] md:text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                                     >
-                                      <span className="hidden md:inline">
-                                        Quantity
-                                      </span>
-                                      <span className="inline md:hidden">
-                                        Qty
-                                      </span>
+                                      <div className="flex flex-wrap items-center w-24">
+                                        <span>Quantity</span>
+                                        <button
+                                          type="button"
+                                          className="ml-2 text-gray-400 hover:text-gray-500"
+                                          onClick={toggleFilterOpen}
+                                        >
+                                          <span className="sr-only">
+                                            Filter quantity
+                                          </span>
+                                          <FilterIcon
+                                            className="w-4 h-4"
+                                            aria-hidden="true"
+                                          />
+                                        </button>
+                                        {isFilterOpen ? (
+                                          <input
+                                            className="outline-none mt-1 py-1 w-full dark:placeholder-gray-400 dark:text-gray-200 relative px-2 inline-flex bg-white dark:bg-black flex-row items-center rounded-md overflow-hidden shadow-sm border border-gray-300 dark:border-gray-500 focus:border-red-500 focus:dark:border-gray-200"
+                                            onChange={(event) =>
+                                              setQuantity(
+                                                Number(event.target.value)
+                                              )
+                                            }
+                                            placeholder="E.g. 10"
+                                            type="number"
+                                            value={quantity ? quantity : ""}
+                                          />
+                                        ) : null}
+                                      </div>
                                     </th>
 
                                     <th
                                       scope="col"
-                                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell"
+                                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap tracking-wider hidden lg:table-cell"
                                     >
                                       Expire In
                                     </th>
@@ -623,7 +665,7 @@ export default function TokenDetails() {
                                 <tbody className="bg-white divide-y divide-gray-200 dark:divide-gray-400 dark:bg-gray-300 relative">
                                   {listingData?.pages.map((page, i) => (
                                     <React.Fragment key={i}>
-                                      {(page.tokens[0]?.listings || []).map(
+                                      {(page.tokens[0]?.listings ?? []).map(
                                         (listing) => (
                                           <tr key={listing.id}>
                                             <td className="px-6 py-4 whitespace-nowrap text-[0.7rem] md:text-sm font-medium text-gray-900">
@@ -645,7 +687,7 @@ export default function TokenDetails() {
                                               ETH
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-[0.7rem] md:text-sm text-gray-500 dark:text-gray-700">
-                                              {listing.quantity}
+                                              {listing.quantity.toLocaleString()}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-700 hidden lg:table-cell">
                                               {formatDistanceToNow(
@@ -680,7 +722,16 @@ export default function TokenDetails() {
                                                     setModalProps({
                                                       isOpen: true,
                                                       targetNft: {
-                                                        metadata,
+                                                        metadata: {
+                                                          name:
+                                                            metadata.name ?? "",
+                                                          description:
+                                                            metadata.description ??
+                                                            "",
+                                                          image:
+                                                            metadata.image ??
+                                                            "",
+                                                        },
                                                         payload: {
                                                           ...listing,
                                                           standard:
@@ -689,6 +740,9 @@ export default function TokenDetails() {
                                                           tokenId:
                                                             tokenInfo.tokenId,
                                                         },
+                                                        collection:
+                                                          collectionName,
+                                                        slug,
                                                       },
                                                     });
                                                   }
@@ -758,10 +812,9 @@ export default function TokenDetails() {
                           </Disclosure.Button>
                         </h3>
                         <Disclosure.Panel as="div" className="pb-6">
-                          {metadata?.attributes &&
-                          metadata.attributes.length > 0 ? (
+                          {attributes.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                              {metadata?.attributes.map(({ attribute }) => {
+                              {attributes.map(({ attribute }) => {
                                 if (attribute.percentage == null) {
                                   return (
                                     <div className="border-2 border-red-400 dark:border-gray-400 rounded-md bg-red-200 dark:bg-gray-300 flex items-center flex-col py-2">
@@ -781,7 +834,8 @@ export default function TokenDetails() {
                                       pathname: `/collection/${slugOrAddress}`,
                                       query: {
                                         search: new URLSearchParams({
-                                          [attribute.name]: attribute.value,
+                                          [attribute.name]:
+                                            attribute.value.replace(/\/.+/, ""),
                                         }).toString(),
                                       },
                                     }}
@@ -884,19 +938,16 @@ export default function TokenDetails() {
                                 </dd>
                               </div>
                               {data.collection?.standard ===
-                                TokenStandard.ERC721 && (
+                              TokenStandard.ERC1155 ? (
                                 <div className="sm:col-span-1">
                                   <dt className="text-sm font-medium text-gray-500">
-                                    Rank
+                                    Items
                                   </dt>
-                                  <dd className="mt-1 text-sm text-gray-900 dark:text-gray-300 space-x-1">
-                                    <span>Coming Soon!</span>
-                                    {/* <span className="text-gray-400">
-                                      ({getRarity(tokenInfo.rank ?? 0)})
-                                    </span> */}
+                                  <dd className="mt-1 text-sm text-gray-900 dark:text-gray-300">
+                                    {data.collection?.tokens?.[0].stats?.items.toLocaleString()}
                                   </dd>
                                 </div>
-                              )}
+                              ) : null}
                             </div>
                           </Disclosure.Panel>
                         </>
@@ -1030,6 +1081,7 @@ export default function TokenDetails() {
       </div>
       {tokenInfo && data?.collection?.standard && (
         <TransferNFTModal
+          address={formattedAddress}
           isOpen={isTransferModalOpen}
           onClose={() => setTransferModalOpen(false)}
           title={metadata?.name ?? ""}
@@ -1039,10 +1091,9 @@ export default function TokenDetails() {
       )}
       {modalProps.isOpen && modalProps.targetNft && (
         <PurchaseItemModal
+          address={formattedAddress}
           isOpen={true}
-          state={state}
-          send={send}
-          onClose={() => setModalProps({ isOpen: false, targetNft: null })}
+          onClose={closePurchaseModal}
           targetNft={modalProps.targetNft}
         />
       )}
@@ -1093,12 +1144,14 @@ const timelineContent = (
 };
 
 const TransferNFTModal = ({
+  address,
   isOpen,
   onClose,
   title,
   token,
   standard,
 }: {
+  address: string;
   isOpen: boolean;
   onClose: () => void;
   title: string;
@@ -1118,19 +1171,14 @@ const TransferNFTModal = ({
   const router = useRouter();
 
   const { account } = useEthers();
-  const { address: slugOrAddress, tokenId } = router.query;
-
-  const chainId = useChainId();
-  const normalizedAddress = Array.isArray(slugOrAddress)
-    ? slugToAddress(slugOrAddress[0], chainId)
-    : slugToAddress(slugOrAddress ?? AddressZero, chainId);
+  const { tokenId } = router.query;
 
   const normalizedTokenId = Array.isArray(tokenId)
     ? tokenId[0]
     : tokenId ?? "0";
 
   const { send: transfer, state: transferState } = useTransferNFT(
-    normalizedAddress.slice(0, 42),
+    address.slice(0, 42),
     standard
   );
 
@@ -1207,212 +1255,6 @@ const TransferNFTModal = ({
       >
         Transfer
       </Button>
-    </Modal>
-  );
-};
-
-const PurchaseItemModal = ({
-  isOpen,
-  onClose,
-  targetNft,
-  state,
-  send,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  targetNft: targetNftT;
-  state: TransactionStatus;
-  send: (
-    nft: targetNftT,
-    address: string,
-    ownerAddress: string,
-    tokenId: number,
-    quantity: number,
-    pricePerItem: string
-  ) => void;
-}) => {
-  const [quantity, setQuantity] = React.useState(1);
-  const { account } = useEthers();
-  const { metadata, payload } = targetNft;
-  const chainId = useChainId();
-
-  const router = useRouter();
-  const { address: slugOrAddress } = router.query;
-  const { magicBalance, ethPrice, setSushiModalOpen } = useMagic();
-
-  const normalizedAddress = (
-    Array.isArray(slugOrAddress)
-      ? slugToAddress(slugOrAddress[0], chainId)
-      : slugToAddress(slugOrAddress ?? AddressZero, chainId)
-  ).slice(0, 42);
-
-  const totalPrice =
-    quantity * Number(parseFloat(formatEther(targetNft.payload.pricePerItem)));
-
-  const canPurchase = magicBalance.gte(
-    BigNumber.from(targetNft.payload.pricePerItem).mul(quantity)
-  );
-
-  const { send: approve, state: approveState } = useApproveMagic();
-
-  const magicAllowance = useTokenAllowance(
-    Contracts[chainId].magic,
-    account ?? AddressZero,
-    Contracts[chainId].marketplaceBuyer
-  );
-
-  const buttonRef = React.useRef() as React.MutableRefObject<HTMLButtonElement>;
-
-  const notAllowed = magicAllowance?.isZero() ?? true;
-
-  return (
-    <Modal
-      onClose={onClose}
-      isOpen={isOpen}
-      title="Order Summary"
-      ref={buttonRef}
-    >
-      <div className="sm:mt-10 lg:mt-0">
-        <div className="sm:mt-4">
-          <h3 className="sr-only">Items in your cart</h3>
-          <ul role="list" className="divide-y divide-gray-200">
-            <li
-              key={payload.id}
-              className="flex flex-col sm:flex-row py-6 px-4 sm:px-6"
-            >
-              <div className="flex-shrink-0">
-                <ImageWrapper
-                  height="50%"
-                  token={{
-                    name: targetNft.metadata?.name,
-                    metadata:
-                      targetNft.metadata?.description &&
-                      targetNft.metadata?.image
-                        ? {
-                            description: targetNft.metadata.description,
-                            image: targetNft.metadata.image,
-                          }
-                        : null,
-                  }}
-                  width="50%"
-                />
-              </div>
-
-              <div className="sm:ml-6 sm:space-y-0 mt-2 sm:mt-0 space-y-2 flex-1 flex flex-col">
-                <div className="flex">
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-sm">
-                      <p className="text-sm text-gray-500 dark:text-gray-400 uppercase">
-                        {metadata?.description}
-                      </p>
-                      <p className="mt-1 font-medium text-gray-800 dark:text-gray-50">
-                        {metadata?.name ?? ""}
-                      </p>
-                      <p className="mt-2 text-gray-400 dark:text-gray-500 text-xs">
-                        <span className="text-gray-500 dark:text-gray-400">
-                          Sold by:
-                        </span>{" "}
-                        {shortenAddress(payload.seller.id)}
-                      </p>
-                    </h4>
-                  </div>
-                </div>
-
-                {payload.standard === TokenStandard.ERC1155 && (
-                  <div className="flex-1 pt-4 flex items-end justify-between">
-                    <p className="mt-1 text-xs font-medium text-gray-900 dark:text-gray-100">
-                      {formatEther(payload.pricePerItem)} $MAGIC{" "}
-                      <span className="text-[0.5rem] text-gray-500 dark:text-gray-400">
-                        Per Item
-                      </span>
-                    </p>
-
-                    <div className="ml-4">
-                      <label htmlFor="quantity" className="sr-only">
-                        Quantity
-                      </label>
-                      <select
-                        id="quantity"
-                        name="quantity"
-                        value={quantity}
-                        onChange={(e) => setQuantity(Number(e.target.value))}
-                        className="form-select rounded-md border dark:text-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 dark:focus:ring-gray-300 dark:focus:border-gray-300 text-base font-medium text-gray-700 text-left shadow-sm focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm"
-                      >
-                        {Array.from({
-                          length: Number(payload.quantity) || 0,
-                        }).map((_, idx) => (
-                          <option key={idx} value={idx + 1}>
-                            {idx + 1}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </li>
-          </ul>
-          <dl className="py-6 px-4 space-y-6 sm:px-6">
-            <div className="flex items-center justify-between border-t border-gray-200 pt-6">
-              <dt className="text-base font-medium">Total</dt>
-              <dd className="text-base font-medium text-gray-900 dark:text-gray-100 flex flex-col items-end">
-                <p>{totalPrice} $MAGIC</p>
-                <p className="text-gray-500 text-sm mt-1">
-                  ≈ <CurrencySwitcher price={totalPrice} />
-                </p>
-              </dd>
-            </div>
-          </dl>
-
-          <div className="border-t border-gray-200 py-6 px-4 sm:px-6">
-            {notAllowed ? (
-              <Button
-                ref={buttonRef}
-                onClick={approve}
-                isLoading={approveState.status === "Mining"}
-                loadingText="Approving $MAGIC..."
-                variant="secondary"
-              >
-                Approve $MAGIC to purchase this item
-              </Button>
-            ) : (
-              <>
-                <Button
-                  ref={buttonRef}
-                  disabled={!canPurchase || state.status === "Mining"}
-                  isLoading={state.status === "Mining"}
-                  loadingText="Confirming order..."
-                  onClick={() => {
-                    send(
-                      targetNft,
-                      normalizedAddress,
-                      payload.seller.id,
-                      Number(payload.tokenId),
-                      quantity,
-                      payload.pricePerItem
-                    );
-                  }}
-                >
-                  {canPurchase
-                    ? "Confirm order"
-                    : "You have insufficient funds"}
-                </Button>
-                {!canPurchase && (
-                  <button
-                    className="mt-4 text-xs w-full m-auto text-red-500 underline"
-                    onClick={() => {
-                      onClose();
-                      setSushiModalOpen(true);
-                    }}
-                  >
-                    Purchase MAGIC on SushiSwap
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
     </Modal>
   );
 };

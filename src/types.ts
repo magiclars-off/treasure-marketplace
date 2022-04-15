@@ -28,17 +28,24 @@ export type NormalizedMetadata = Partial<{
 }>;
 
 export type targetNftT = {
-  metadata: NormalizedMetadata | null;
+  metadata: {
+    image: string;
+    name: string;
+    description: string;
+  } | null;
   payload: ListingFieldsWithTokenFragment & {
     standard: TokenStandard;
     tokenId: string;
   };
+  slug: string;
+  collection: string;
 };
 
 export type Nft = {
   address: string;
   collection: string;
   collectionId: string;
+  slug: string;
   listing?: {
     expires: string;
     pricePerItem: string;
