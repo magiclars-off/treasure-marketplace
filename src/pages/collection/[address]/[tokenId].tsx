@@ -319,9 +319,7 @@ export default function TokenDetails() {
     <div className="pt-12">
       <Metadata
         title={
-          metadata
-            ? `${metadata.description} - ${metadata.name} (#${tokenId})`
-            : undefined
+          metadata ? `${metadata.description} - ${metadata.name}` : undefined
         }
         description="NFT on Arbitrum native marketplace, created by TreasureDAO"
         url={window.location.href}

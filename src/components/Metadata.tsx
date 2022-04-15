@@ -1,20 +1,18 @@
-import { FC } from "react";
 import Head from "next/head";
-import { Metadata } from "../../generated/graphql";
 
 type MetadataProps = {
   title?: string;
   description?: string;
   url?: string;
   image?: string;
-}
+};
 
-const Metadata: FC<MetadataProps> = ({
+const Metadata = ({
   title = "Treasure Marketplace",
   description = "Arbitrum native NFT marketplace, created by TreasureDAO",
   url = "http://marketplace.treasure.lol/",
   image = "http://marketplace.treasure.lol/img/seoBanner.png",
-}) => (
+}: MetadataProps) => (
   <Head>
     <meta name="title" content={title} />
     <meta name="description" content={description} />
@@ -27,7 +25,6 @@ const Metadata: FC<MetadataProps> = ({
     <meta property="twitter:url" content={url} />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={image} />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />

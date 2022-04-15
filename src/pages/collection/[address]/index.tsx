@@ -910,6 +910,7 @@ const Collection = () => {
       <MobileFiltersWrapper />
       <Metadata
         title={collectionName ? `${collectionName} - Collection` : undefined}
+        description={description ?? undefined}
         url={window.location.href}
       />
       <div className="mx-auto px-4 sm:px-6 lg:px-8 pt-24">
