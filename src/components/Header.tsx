@@ -37,11 +37,11 @@ import { InboxIcon } from "@heroicons/react/solid";
 import { TreasureIcon } from "./Icons";
 
 const NEW_COLLECTIONS = [
-  "Balancer Crystal",
-  "Peek-A-Boo",
   "Realm",
   "Smithonia Weapons",
   "Tales of Elleria",
+  "Toadstoolz",
+  "Toadstoolz Itemz",
 ];
 
 const walletLink = new WalletLinkConnector({

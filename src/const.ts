@@ -25,7 +25,12 @@ export const smolverseItems = [
   "Smol Treasures",
 ];
 
-export const METADATA_COLLECTIONS = ["Peek-A-Boo", "Tales of Elleria"];
+export const METADATA_COLLECTIONS = [
+  "Peek-A-Boo",
+  "Tales of Elleria",
+  "Toadstoolz",
+  "Toadstoolz Itemz",
+];
 
 export const FEE = 0.05;
 export const USER_SHARE = 1 - FEE;

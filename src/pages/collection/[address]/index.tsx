@@ -88,6 +88,10 @@ const generateSubDescription = (collectionName: string): string | null => {
       "Smithonia is a SmithyDAO project. It's a world of staking and adventure which supports a hybrid economy where the primary objective of the game is to build the rarity of your weapon through gameplay.",
     "Tales of Elleria":
       "Tales of Elleria is an immersive three-dimensional role-playing GameFi project built on Arbitrum One. Summon heroes, take on assignments, go on quests and epic adventures to battle dangerous monsters earn tremendous rewards.",
+    Toadstoolz:
+      "Toadstoolz is an on-chain toad life simulation NFT game. Toadz love to hunt for $BUGZ, go on adventures and are obsessed with collecting NFTs.",
+    "Toadstoolz Itemz":
+      "Toadstoolz is an on-chain toad life simulation NFT game. Toadz love to hunt for $BUGZ, go on adventures and are obsessed with collecting NFTs.",
   } as const;
 
   return collectionMapper[collectionName] ?? null;
@@ -1147,6 +1151,12 @@ const Collection = () => {
                                 (item) => item.id === token.id
                               );
 
+                            const shrdMetadata = isShared
+                              ? sharedMetadata.data?.tokens.find(
+                                  (item) => item.id === token.id
+                                )
+                              : null;
+
                             const metadata =
                               isBridgeworldItem && legionsMetadata
                                 ? {
@@ -1167,6 +1177,17 @@ const Collection = () => {
                                     metadata: {
                                       image: svMetadata.image ?? "",
                                       name: svMetadata.name,
+                                      description: collectionName,
+                                    },
+                                  }
+                                : isShared && shrdMetadata
+                                ? {
+                                    id: shrdMetadata.id,
+                                    name: shrdMetadata.name,
+                                    tokenId: token.tokenId,
+                                    metadata: {
+                                      image: shrdMetadata.image ?? "",
+                                      name: shrdMetadata.name,
                                       description: collectionName,
                                     },
                                   }

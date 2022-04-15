@@ -2,9 +2,27 @@ import Image from "next/image";
 
 import logoImg from "../../public/img/logotransparent.png";
 import smolBodiesImg from "../../public/img/smolbodies.png";
+import toadstoolzImg from "../../public/img/toadstoolz.jpg";
 import peekabooImg from "../../public/img/peekaboo.svg";
 import realmImg from "../../public/img/realm.png";
 import Link from "next/link";
+import { useCollection } from "../lib/hooks";
+
+const toadstoolz = {
+  href: "toadstoolz",
+  name: "Toadstoolz",
+  image: toadstoolzImg.src,
+  description:
+    "Toadstoolz is an on-chain toad life simulation game. Toadz love to hunt for $BUGZ and go on adventures.",
+};
+
+const battlefly = {
+  href: "battlefly",
+  name: "BattleFly",
+  image: "https://ipfs.io/ipfs/QmVSMdABd2hahtS74owdeu6nHauaXhWviReyMGch8Ztb6W",
+  description:
+    "BattleFly is an experimental PVP/P2E strategy game, powered by $MAGIC.",
+};
 
 const collections = [
   {
@@ -29,14 +47,6 @@ const collections = [
       "https://ipfs.io/ipfs/QmbkpUo9dPsTVDfttdgkV6eqbPLCXyoKhFBxhwdAgqB15z/Seed of Life 1.png",
     description:
       "Built atop the Magic ecosystem, Life embodies the metaverse as a living breathing ecosystem...",
-  },
-  {
-    href: "battlefly",
-    name: "BattleFly",
-    image:
-      "https://ipfs.io/ipfs/QmVSMdABd2hahtS74owdeu6nHauaXhWviReyMGch8Ztb6W",
-    description:
-      "BattleFly is an experimental PVP/P2E strategy game, powered by $MAGIC.",
   },
   {
     href: "legion-auxiliary",
@@ -127,6 +137,9 @@ const collections = [
 ];
 
 export default function Home() {
+  // Temporary until after launched, will dynamically update homepage
+  const toadstoolzLaunched = Boolean(useCollection("toadstoolz").id);
+
   return (
     <div className="relative">
       <main className="flex flex-col mt-16 pt-20 w-full min-h-screen landing">
@@ -149,35 +162,44 @@ export default function Home() {
           <h2 className="sr-only">Collections</h2>
 
           <div className="grid gap-4 grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8">
-            {collections.map((product) => (
-              <div
-                key={product.href}
-                className="group relative bg-white dark:bg-gray-500 border border-gray-200 dark:border-gray-600 rounded-lg flex flex-col overflow-hidden"
-              >
-                <div className="relative aspect-none bg-gray-200 group-hover:opacity-75">
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    layout="responsive"
-                    width={400}
-                    height={400}
-                  />
+            {collections
+              .slice(0, 3)
+              .concat(toadstoolzLaunched ? toadstoolz : battlefly)
+              .concat(collections.slice(3, 7))
+              .concat(toadstoolzLaunched ? battlefly : [])
+              .concat(collections.slice(7))
+              .map((product) => (
+                <div
+                  key={product.href}
+                  className="group relative bg-white dark:bg-gray-500 border border-gray-200 dark:border-gray-600 rounded-lg flex flex-col overflow-hidden"
+                >
+                  <div className="relative aspect-none bg-gray-200 group-hover:opacity-75">
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      layout="responsive"
+                      width={400}
+                      height={400}
+                    />
+                  </div>
+                  <div className="flex-1 p-4 space-y-2 flex flex-col">
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-50">
+                      <Link href={`/collection/${product.href}`}>
+                        <a>
+                          <span
+                            aria-hidden="true"
+                            className="absolute inset-0"
+                          />
+                          {product.name}
+                        </a>
+                      </Link>
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-300">
+                      {product.description}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 p-4 space-y-2 flex flex-col">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-50">
-                    <Link href={`/collection/${product.href}`}>
-                      <a>
-                        <span aria-hidden="true" className="absolute inset-0" />
-                        {product.name}
-                      </a>
-                    </Link>
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    {product.description}
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       </main>
