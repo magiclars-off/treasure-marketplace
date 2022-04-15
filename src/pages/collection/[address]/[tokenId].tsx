@@ -30,6 +30,7 @@ import {
   formatPercent,
   formatPrice,
   formattable,
+  generateIpfsLink,
 } from "../../../utils";
 import {
   GetTokenDetailsQuery,
@@ -53,6 +54,7 @@ import { useDebounce } from "use-debounce";
 import { SortMenu } from "../../../components/SortMenu";
 import { PurchaseItemModal } from "../../../components/PurchaseItemModal";
 import { CurrencySwitcher } from "../../../components/CurrencySwitcher";
+import Metadata from "../../../components/Metadata";
 
 const MAX_ITEMS_PER_PAGE = 10;
 
@@ -104,7 +106,7 @@ const sortOptions = [
 //   return "Common";
 // };
 
-export default function TokenDetail() {
+export default function TokenDetails() {
   const router = useRouter();
   const { account } = useEthers();
   const queryClient = useQueryClient();
@@ -315,6 +317,14 @@ export default function TokenDetail() {
 
   return (
     <div className="pt-12">
+      <Metadata
+        title={
+          metadata ? `${metadata.description} - ${metadata.name}` : undefined
+        }
+        description="NFT on Arbitrum native marketplace, created by TreasureDAO"
+        url={window.location.href}
+        image={metadata?.image ? generateIpfsLink(metadata.image) : undefined}
+      />
       <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:max-w-[96rem] lg:px-8 pt-12">
         {loading && <CenterLoadingDots className="h-96" />}
         {!tokenInfo && !loading && (
@@ -651,7 +661,7 @@ export default function TokenDetail() {
                                   </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200 dark:divide-gray-400 dark:bg-gray-300 relative">
-                                  {listingData.pages.map((page, i) => (
+                                  {listingData?.pages.map((page, i) => (
                                     <React.Fragment key={i}>
                                       {(page.tokens[0]?.listings ?? []).map(
                                         (listing) => (

@@ -54,6 +54,7 @@ import {
 import { SortMenu } from "../../../components/SortMenu";
 import { targetNftT } from "../../../types";
 import { PurchaseItemModal } from "../../../components/PurchaseItemModal";
+import Metadata from "../../../components/Metadata";
 
 const MAX_ITEMS_PER_PAGE = 48;
 
@@ -905,8 +906,13 @@ const Collection = () => {
   const description = generateSubDescription(collectionName);
 
   return (
-    <main>
+    <div>
       <MobileFiltersWrapper />
+      <Metadata
+        title={collectionName ? `${collectionName} - Collection` : undefined}
+        description={description ?? undefined}
+        url={window.location.href}
+      />
       <div className="mx-auto px-4 sm:px-6 lg:px-8 pt-24">
         <div className="py-24 flex flex-col items-center">
           {statData?.collection ? (
@@ -1732,7 +1738,7 @@ const Collection = () => {
           targetNft={modalProps.targetNft}
         />
       )}
-    </main>
+    </div>
   );
 };
 

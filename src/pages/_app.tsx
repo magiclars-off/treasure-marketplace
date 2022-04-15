@@ -1,7 +1,6 @@
 import "../css/tailwind.css";
 
 import { Fragment, useEffect, useState } from "react";
-import Head from "next/head";
 import { ChainId, DAppProvider } from "@usedapp/core";
 import { ReactQueryDevtools } from "react-query/devtools";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -40,61 +39,6 @@ const config = {
 function MyApp({ Component, pageProps }) {
   return (
     <>
-      <Head>
-        <title>Treasure Marketplace</title>
-        <meta name="title" content="Treasure Marketplace" />
-        <meta
-          name="description"
-          content="Arbitrum native NFT marketplace, created by TreasureDAO"
-        />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="http://marketplace.treasure.lol/" />
-        <meta property="og:title" content="Treasure Marketplace" />
-        <meta
-          property="og:description"
-          content="Arbitrum native NFT marketplace, created by TreasureDAO"
-        />
-        <meta
-          property="og:image"
-          content="http://marketplace.treasure.lol/img/seoBanner.png"
-        />
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta
-          property="twitter:url"
-          content="http://marketplace.treasure.lol/"
-        />
-        <meta property="twitter:title" content="Treasure Marketplace" />
-        <meta
-          property="twitter:description"
-          content="Arbitrum native NFT marketplace, created by TreasureDAO"
-        />
-        <meta
-          property="twitter:image"
-          content="http://marketplace.treasure.lol/img/seoBanner.png"
-        />
-        <link
-          rel="apple-touch-icon"
-          sizes="180x180"
-          href="/apple-touch-icon.png"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="32x32"
-          href="/favicon-32x32.png"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="16x16"
-          href="/favicon-16x16.png"
-        />
-        <link rel="manifest" href="/site.webmanifest" />
-        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
-        <meta name="msapplication-TileColor" content="#da532c" />
-        <meta name="theme-color" content="#ffffff" />
-        <script async src="https://cdn.splitbee.io/sb.js"></script>
-      </Head>
       <ThemeProvider attribute="class">
         <SSRProvider>
           <DAppProvider config={config}>

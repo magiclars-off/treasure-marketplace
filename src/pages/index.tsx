@@ -7,6 +7,7 @@ import peekabooImg from "../../public/img/peekaboo.svg";
 import realmImg from "../../public/img/realm.png";
 import Link from "next/link";
 import { useCollection } from "../lib/hooks";
+import Metadata from "../components/Metadata";
 
 const toadstoolz = {
   href: "toadstoolz",
@@ -142,6 +143,7 @@ export default function Home() {
 
   return (
     <div className="relative">
+      <Metadata />
       <main className="flex flex-col mt-16 pt-20 w-full min-h-screen landing">
         <div className="z-10 px-8 max-w-2xl lg:max-w-7xl mx-auto">
           <div className="lg:max-w-[70%]">
