@@ -104,13 +104,6 @@ function MyApp({ Component, pageProps }) {
 }
 
 const Main = ({ pageProps, Component }) => {
-  const [mounted, setMounted] = useState(false);
-
-  // When mounted on client, now we can show the UI
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return null;
-
   return (
     <div className="min-h-screen relative flex flex-col dark:bg-gray-900">
       <Header />

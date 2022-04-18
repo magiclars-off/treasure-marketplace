@@ -64,6 +64,8 @@ import {
   useFiltersList,
 } from "../../components/Filters";
 import LargeGridIcon from "../../components/LargeGridIcon";
+import type { GetServerSidePropsContext } from "next";
+import { Metadata, MetadataProps } from "../../components/Metadata";
 
 type DrawerProps = {
   actions: Array<"create" | "remove" | "update">;
@@ -702,7 +704,7 @@ const Drawer = ({
   );
 };
 
-const Inventory = () => {
+const Inventory = ({ og }: { og: MetadataProps }) => {
   const router = useRouter();
   const [nft, setNft] = useState<Nft | null>(null);
   const [toggleGrid, setToggleGrid] = useState(false);
@@ -928,6 +930,7 @@ const Inventory = () => {
   return (
     <main>
       <MobileFiltersWrapper />
+      <Metadata {...og} />
       <div className="flex-1 flex flex-col overflow-hidden pt-24">
         <div className="flex-1 flex items-stretch overflow-hidden">
           <main className="flex-1 overflow-y-auto">
@@ -1389,5 +1392,34 @@ const Inventory = () => {
     </main>
   );
 };
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  if (!context.params) {
+    throw new Error("No params");
+  }
+
+  if (typeof context.params?.section === "string") {
+    throw new Error("");
+  }
+
+  const title =
+    context.params?.section
+      ?.map((segment) =>
+        segment.slice(0, 1).toUpperCase().concat(segment.slice(1))
+      )
+      .concat(["Inventory"])
+      .join(" - ") ?? "Inventory";
+
+  return {
+    props: {
+      og: {
+        description: "View the NFTs that you hold in your wallet",
+        image: "https://marketplace.treasure.lol/img/seoBanner.png",
+        title,
+        url: `https://marketplace.treasure.lol${context.resolvedUrl}`,
+      },
+    },
+  };
+}
 
 export default Inventory;

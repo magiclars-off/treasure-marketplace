@@ -70,3 +70,13 @@ export function getCollectionSlugFromName(
 ): string | undefined {
   return collectionName?.replace(/\s+/g, "-")?.toLowerCase();
 }
+
+export function getCollectionNameFromSlug(slug: string): string {
+  return slug
+    .replace(/-/g, " ")
+    .replace(/((^| )(.))/g, (letter) => letter.toUpperCase())
+    .replace(" Of ", " of ")
+    .replace("Peek A Boo", "Peek-A-Boo")
+    .replace("Battlefly", "BattleFly")
+    .replace("Nft", "NFT");
+}

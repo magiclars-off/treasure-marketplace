@@ -21,7 +21,12 @@ import {
 import Link from "next/link";
 import { useInfiniteQuery, useQuery, useQueryClient } from "react-query";
 import { useRouter } from "next/router";
-import { marketplace } from "../../../lib/client";
+import client, {
+  bridgeworld,
+  marketplace,
+  metadata,
+  smolverse,
+} from "../../../lib/client";
 import { AddressZero } from "@ethersproject/constants";
 import { useCollection, useMetadata, useTransferNFT } from "../../../lib/hooks";
 import { CenterLoadingDots } from "../../../components/CenterLoadingDots";
@@ -31,6 +36,7 @@ import {
   formatPrice,
   formattable,
   generateIpfsLink,
+  getCollectionNameFromSlug,
 } from "../../../utils";
 import {
   GetTokenDetailsQuery,
@@ -54,7 +60,15 @@ import { useDebounce } from "use-debounce";
 import { SortMenu } from "../../../components/SortMenu";
 import { PurchaseItemModal } from "../../../components/PurchaseItemModal";
 import { CurrencySwitcher } from "../../../components/CurrencySwitcher";
-import Metadata from "../../../components/Metadata";
+import { Metadata, MetadataProps } from "../../../components/Metadata";
+import type { GetServerSidePropsContext } from "next";
+import {
+  ALL_COLLECTION_METADATA,
+  BridgeworldItems,
+  COLLECTION_DESCRIPTIONS,
+  METADATA_COLLECTIONS,
+  smolverseItems,
+} from "../../../const";
 
 const MAX_ITEMS_PER_PAGE = 10;
 
@@ -106,7 +120,7 @@ const sortOptions = [
 //   return "Common";
 // };
 
-export default function TokenDetails() {
+export default function TokenDetails({ og }: { og: MetadataProps }) {
   const router = useRouter();
   const { account } = useEthers();
   const queryClient = useQueryClient();
@@ -317,14 +331,7 @@ export default function TokenDetails() {
 
   return (
     <div className="pt-12">
-      <Metadata
-        title={
-          metadata ? `${metadata.description} - ${metadata.name}` : undefined
-        }
-        description="NFT on Arbitrum native marketplace, created by TreasureDAO"
-        url={window.location.href}
-        image={metadata?.image ? generateIpfsLink(metadata.image) : undefined}
-      />
+      <Metadata {...og} />
       <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:max-w-[96rem] lg:px-8 pt-12">
         {loading && <CenterLoadingDots className="h-96" />}
         {!tokenInfo && !loading && (
@@ -1256,3 +1263,118 @@ const TransferNFTModal = ({
     </Modal>
   );
 };
+
+async function getCollectionId(name: string) {
+  const response = await marketplace.getCollectionId({ name });
+  const [collection] = response.collections;
+
+  if (!collection) {
+    throw new Error(`Unable to get collection id: ${name}`);
+  }
+
+  return collection.id;
+}
+
+async function getImageForToken(collection: string, tokenId: string) {
+  switch (true) {
+    case collection === "Treasures":
+    case BridgeworldItems.includes(collection): {
+      const id = await getCollectionId(collection);
+
+      return (
+        await bridgeworld.getBridgeworldMetadata({
+          ids: [`${id.slice(0, 42)}-0x${Number(tokenId).toString(16)}`],
+        })
+      ).tokens[0].image;
+    }
+    case smolverseItems.includes(collection): {
+      const id = await getCollectionId(collection);
+
+      return (
+        await smolverse.getSmolverseMetadata({
+          ids: [`${id}-0x${Number(tokenId).toString(16)}`],
+        })
+      ).tokens[0].image;
+    }
+    case collection === "BattleFly":
+      return fetch(
+        `${process.env.NEXT_PUBLIC_BATTLEFLY_API}/battleflies/${tokenId}/metadata`
+      )
+        .then((res) => res.json())
+        .then((data) => data.image);
+    case collection.includes("Founders"):
+      return fetch(
+        `${process.env.NEXT_PUBLIC_BATTLEFLY_API}/specials/${tokenId}/metadata`
+      )
+        .then((res) => res.json())
+        .then((data) => data.image);
+    case METADATA_COLLECTIONS.includes(collection): {
+      const id = await getCollectionId(collection);
+
+      return (
+        await metadata.getTokenMetadata({
+          ids: [`${id}-0x${Number(tokenId).toString(16)}`],
+        })
+      ).tokens[0].image;
+    }
+    case collection === "Realm":
+      return "https://marketplace.treasure.lol/img/realm.png";
+    case collection === "Smithonia Weapons":
+      return fetch(
+        `${process.env.NEXT_PUBLIC_SMITHONIA_WEAPONS_API}/nft/metadata?id=${tokenId}`
+      )
+        .then((res) => res.json())
+        .then((data) => data[0].image);
+    default: {
+      const id = await getCollectionId(collection);
+
+      return (
+        await client.getTokenMetadata({
+          id: `${id}-0x${Number(tokenId).toString(16)}`,
+        })
+      ).token?.metadata?.image;
+    }
+  }
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  if (!context.params) {
+    throw new Error("No params");
+  }
+
+  const { address, tokenId } = context.params;
+
+  if (typeof address !== "string") {
+    throw new Error("`address` is not a string");
+  }
+
+  if (typeof tokenId !== "string") {
+    throw new Error("`tokenId` is not a string");
+  }
+
+  const collection = getCollectionNameFromSlug(address);
+  const metadata = ALL_COLLECTION_METADATA.find(
+    (collection) => collection.href === address
+  );
+
+  if (!metadata) {
+    throw new Error("No metadata");
+  }
+
+  const imageUrl = await getImageForToken(collection, tokenId);
+  const image = imageUrl.includes("ipfs")
+    ? generateIpfsLink(imageUrl)
+    : imageUrl;
+  const { description } = metadata;
+
+  return {
+    props: {
+      og: {
+        description,
+        image,
+        title: `${tokenId} - ${collection}`,
+        url: `https://marketplace.treasure.lol${context.resolvedUrl}`,
+      },
+    },
+  };
+}

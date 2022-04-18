@@ -50,6 +50,14 @@ export const getUserInventory = gql`
   }
 `;
 
+export const getCollectionId = gql`
+  query getCollectionId($name: String!) {
+    collections(where: { name: $name }) {
+      id
+    }
+  }
+`;
+
 export const getCollectionStats = gql`
   query getCollectionStats($id: ID!) {
     collection(id: $id) {

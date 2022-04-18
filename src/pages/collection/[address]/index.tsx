@@ -13,7 +13,12 @@ import {
   smolverse,
 } from "../../../lib/client";
 import { CenterLoadingDots } from "../../../components/CenterLoadingDots";
-import { abbreviatePrice, formatNumber, formatPrice } from "../../../utils";
+import {
+  abbreviatePrice,
+  formatNumber,
+  formatPrice,
+  getCollectionNameFromSlug,
+} from "../../../utils";
 import { formatEther } from "ethers/lib/utils";
 import ImageWrapper from "../../../components/ImageWrapper";
 import Link from "next/link";
@@ -39,7 +44,9 @@ import {
 import { EthIcon, MagicIcon, SwapIcon } from "../../../components/Icons";
 import { useMagic } from "../../../context/magicContext";
 import {
+  ALL_COLLECTION_METADATA,
   BridgeworldItems,
+  COLLECTION_DESCRIPTIONS,
   METADATA_COLLECTIONS,
   smolverseItems,
 } from "../../../const";
@@ -54,49 +61,10 @@ import {
 import { SortMenu } from "../../../components/SortMenu";
 import { targetNftT } from "../../../types";
 import { PurchaseItemModal } from "../../../components/PurchaseItemModal";
-import Metadata from "../../../components/Metadata";
+import { Metadata, MetadataProps } from "../../../components/Metadata";
+import type { GetServerSidePropsContext } from "next";
 
 const MAX_ITEMS_PER_PAGE = 48;
-
-const generateSubDescription = (collectionName: string): string | null => {
-  const collectionMapper = {
-    BattleFly:
-      "BattleFly is an experimental PVP/P2E strategy game, powered by $MAGIC.",
-    "Legion Genesis": "The Origin Legions of Bridgeworld with a fixed supply.",
-    "Peek-A-Boo":
-      "Peek-A-Boo is a P2E ecosystem having trait customization, unique tokenomics, and competition-focused roadmaps. Our Hide-N-Seek game is the first of many to be onboarded into the Spoopy Metaverse!",
-    "Smol Bodies":
-      "The Smol Bodies inhabit a gym near you, stacking $plates to earn muscle and be not smol.",
-    "Legion Auxiliary":
-      "Descendants of Genesis Legions that can be summoned in Bridgeworld.",
-    "Smol Brains":
-      "The Smol Brains are a dynamic PFP of a monkey whose head gets bigger the larger its IQ becomes.",
-    "Smol Brains Pets":
-      "The Smol Brains Pets are cute companions to accompany your Smol Brain in Smolverse.",
-    "Seed of Life":
-      "Built atop the Magic ecosystem, Life embodies the metaverse as a living breathing ecosystem...",
-    "Smol Cars":
-      "The Smol Cars are here to get you around in Smolverse. Vroom vroom.",
-    Treasures:
-      "Treasures are composable building blocks in Bridgeworld that will be used inter- and intra-metaverse.",
-    "Smol Treasures":
-      "Smols and Swols are currently farming Smol treasures on the moon.",
-    Consumables:
-      "Functional items that are crafted from Treasures and give utility in the Metaverse.",
-    Realm:
-      "Realm is a decentralized world-building experience. Enjoy $MAGIC emissions and Loot from across the Metaverse.",
-    "Smithonia Weapons":
-      "Smithonia is a SmithyDAO project. It's a world of staking and adventure which supports a hybrid economy where the primary objective of the game is to build the rarity of your weapon through gameplay.",
-    "Tales of Elleria":
-      "Tales of Elleria is an immersive three-dimensional role-playing GameFi project built on Arbitrum One. Summon heroes, take on assignments, go on quests and epic adventures to battle dangerous monsters earn tremendous rewards.",
-    Toadstoolz:
-      "Toadstoolz is an on-chain toad life simulation NFT game. Toadz love to hunt for $BUGZ, go on adventures and are obsessed with collecting NFTs.",
-    "Toadstoolz Itemz":
-      "Toadstoolz is an on-chain toad life simulation NFT game. Toadz love to hunt for $BUGZ, go on adventures and are obsessed with collecting NFTs.",
-  } as const;
-
-  return collectionMapper[collectionName] ?? null;
-};
 
 const generateDescription = (collectionName: string) => {
   switch (collectionName) {
@@ -192,7 +160,7 @@ const getInititalFilters = (search: string | undefined) => {
 
 const unique = <T,>(array: T[]) => Array.from(new Set(array));
 
-const Collection = () => {
+const Collection = ({ og }: { og: MetadataProps }) => {
   const router = useRouter();
   const { address: slugOrAddress, tab, search } = router.query;
   const formattedSearch = Array.isArray(search) ? search[0] : search;
@@ -903,16 +871,12 @@ const Collection = () => {
     }
   }, [listings, inView]);
 
-  const description = generateSubDescription(collectionName);
+  const description = COLLECTION_DESCRIPTIONS[slug] ?? null;
 
   return (
     <div>
       <MobileFiltersWrapper />
-      <Metadata
-        title={collectionName ? `${collectionName} - Collection` : undefined}
-        description={description ?? undefined}
-        url={window.location.href}
-      />
+      <Metadata {...og} />
       <div className="mx-auto px-4 sm:px-6 lg:px-8 pt-24">
         <div className="py-24 flex flex-col items-center">
           {statData?.collection ? (
@@ -1827,5 +1791,39 @@ const DetailedFloorPriceModal = ({
     </Modal>
   );
 };
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  if (!context.params) {
+    throw new Error("No params");
+  }
+
+  const { address } = context.params;
+
+  if (typeof address !== "string") {
+    throw new Error("`address` is not a string");
+  }
+
+  const title = getCollectionNameFromSlug(address);
+  const metadata = ALL_COLLECTION_METADATA.find(
+    (collection) => collection.href === address
+  );
+
+  if (!metadata) {
+    throw new Error("No metadata");
+  }
+
+  const { description, image } = metadata;
+
+  return {
+    props: {
+      og: {
+        description,
+        image,
+        title,
+        url: `https://marketplace.treasure.lol${context.resolvedUrl}`,
+      },
+    },
+  };
+}
 
 export default Collection;
