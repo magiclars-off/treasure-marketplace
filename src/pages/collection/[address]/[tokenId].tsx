@@ -65,7 +65,6 @@ import type { GetServerSidePropsContext } from "next";
 import {
   ALL_COLLECTION_METADATA,
   BridgeworldItems,
-  COLLECTION_DESCRIPTIONS,
   METADATA_COLLECTIONS,
   smolverseItems,
 } from "../../../const";
