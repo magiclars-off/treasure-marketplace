@@ -1,6 +1,6 @@
 import "../css/tailwind.css";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment } from "react";
 import { ChainId, DAppProvider } from "@usedapp/core";
 import { ReactQueryDevtools } from "react-query/devtools";
 import { QueryClient, QueryClientProvider } from "react-query";
@@ -17,6 +17,7 @@ import Header from "../components/Header";
 import { Spinner } from "../components/Spinner";
 import { MagicProvider } from "../context/magicContext";
 import Footer from "../components/Footer";
+import { ethers } from "ethers";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,12 +28,35 @@ const queryClient = new QueryClient({
   },
 });
 
+function createProvider(url: string) {
+  const provider = new ethers.providers.JsonRpcProvider(url);
+
+  provider.pollingInterval = 12_000;
+
+  return provider;
+}
+
+const arbitrumProvider = createProvider(
+  `https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY}`
+);
+
+const arbitrumRinkebyProvider = createProvider(
+  "https://arb-rinkeby.g.alchemy.com/v2/PDUCdHLoNrdDJwgVvCNPTx7MrHuQ0uBg"
+);
+
+const providers = {
+  [ChainId.Arbitrum]: arbitrumProvider,
+  [ChainId.ArbitrumRinkeby]: arbitrumRinkebyProvider,
+};
+
+// TODO: Fix this
+// Change if running in dev mode
+const chainId = ChainId.Arbitrum;
+
 const config = {
-  readOnlyChainId: ChainId.Arbitrum,
+  readOnlyChainId: chainId,
   readOnlyUrls: {
-    [ChainId.ArbitrumRinkeby]:
-      "https://arb-rinkeby.g.alchemy.com/v2/PDUCdHLoNrdDJwgVvCNPTx7MrHuQ0uBg",
-    [ChainId.Arbitrum]: `https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY}`,
+    [chainId]: providers[chainId],
   },
 };
 
