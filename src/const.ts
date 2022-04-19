@@ -283,6 +283,7 @@ export const ALL_COLLECTION_METADATA = [
   ...COLLECTION_METADATA,
   BATTLEFLY,
   TOADSTOOLZ,
+  { ...TOADSTOOLZ, href: "toadstoolz-itemz", name: "Toadstoolz Itemz" },
   EXTRA_LIFE,
   BALANCER_CRYSTAL,
   BATTLEFLY_FOUNDERS_V1,
