@@ -531,8 +531,9 @@ const Collection = ({ og }: { og: MetadataProps }) => {
     queries: Object.entries(filters).map(([name, value]) => ({
       queryKey: ["shared-filtered-tokens", listedTokens.data, name, value],
       queryFn: () => {
-        const onlyNumbers = value[0].replace(/[^\d]+/g, "");
-        const isNumber = onlyNumbers !== "";
+        const onlyNumbers = value[0].replace(/^(>|=|<|\s)*(\d+)$/, "$2");
+        const isNumber =
+          onlyNumbers !== value[0] || !Number.isNaN(Number(value[0]));
         const number = Number(onlyNumbers);
         const filter = {
           value_in: isNumber ? range(number, number <= 100 ? 101 : 446) : value,

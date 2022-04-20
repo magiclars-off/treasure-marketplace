@@ -1311,10 +1311,12 @@ async function getImageForToken(collection: string, tokenId: string) {
       const id = await getCollectionId(collection);
 
       return (
-        await metadata.getTokenMetadata({
-          ids: [`${id}-0x${Number(tokenId).toString(16)}`],
-        })
-      ).tokens[0].image;
+        (
+          await metadata.getTokenMetadata({
+            ids: [`${id}-0x${Number(tokenId).toString(16)}`],
+          })
+        ).tokens[0]?.image ?? ""
+      );
     }
     case collection === "Realm":
       return "https://marketplace.treasure.lol/img/realm.png";
