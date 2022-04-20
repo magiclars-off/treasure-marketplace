@@ -106,7 +106,7 @@ const Header = () => {
 
             return [
               { key },
-              <Item key={key}>
+              <Item key={key} textValue={collection.name}>
                 {collection.name}
                 {NEW_COLLECTIONS.includes(collection.name) ? (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -353,7 +353,7 @@ const Header = () => {
                                 )}`;
 
                                 return (
-                                  <Item key={key}>
+                                  <Item key={key} textValue={collection.name}>
                                     {collection.name}
                                     {NEW_COLLECTIONS.includes(
                                       collection.name
