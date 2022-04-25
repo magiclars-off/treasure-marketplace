@@ -59,7 +59,11 @@ export function Metadata({ description, url, image, ...props }: MetadataProps) {
       />
       <meta name="msapplication-TileColor" content="#da532c" />
       <meta name="theme-color" content="#ffffff" />
-      <script async src="https://cdn.splitbee.io/sb.js"></script>
+      <script
+        src="https://cdn.usefathom.com/script.js"
+        data-site="XBZCEUKN"
+        defer
+      ></script>
     </Head>
   );
 }
