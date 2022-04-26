@@ -323,8 +323,8 @@ export const COLLECTION_DESCRIPTIONS = {
   }, {}),
 } as const;
 
-export const FEE = 0.05;
-export const USER_SHARE = 1 - FEE;
+export const DAO_FEE = "0.025";
+export const DEFAULT_COLLECTION_FEE = "0.025";
 
 export const BATTLEFLY_METADATA = {
   battleflies: {
