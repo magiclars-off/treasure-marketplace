@@ -1054,8 +1054,16 @@ const Inventory = ({ og }: { og: MetadataProps }) => {
                     <Activity includeStatus />
                   ) : (
                     <section className="mt-8 pb-16">
-                      {inventory.isLoading && (
-                        <CenterLoadingDots className="h-36" />
+                      {account ? (
+                        inventory.isLoading ? (
+                          <CenterLoadingDots className="h-36" />
+                        ) : null
+                      ) : (
+                        <div className="flex flex-col justify-center items-center h-36">
+                          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200">
+                            Your wallet is not connected.
+                          </h3>
+                        </div>
                       )}
                       {data.length === 0 && !inventory.isLoading && (
                         <div className="flex flex-col justify-center items-center h-36">

@@ -538,7 +538,7 @@ export default function TokenDetails({ og }: { og: MetadataProps }) {
                         <div className="mt-10 text-sm sm:text-base text-gray-500 dark:text-gray-400">
                           This listing is created by you
                         </div>
-                      ) : (
+                      ) : account ? (
                         <div className="max-w-xs flex-1">
                           <Button
                             className="py-3 px-8 text-base"
@@ -570,6 +570,10 @@ export default function TokenDetails({ og }: { og: MetadataProps }) {
                           >
                             Purchase
                           </Button>
+                        </div>
+                      ) : (
+                        <div className="mt-10 text-sm sm:text-base text-gray-500 dark:text-gray-400">
+                          Connect wallet to purchase.
                         </div>
                       )}
                     </div>
@@ -705,57 +709,60 @@ export default function TokenDetails({ og }: { og: MetadataProps }) {
                                                 listing.seller.id
                                               )}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                              <Button
-                                                disabled={addressEqual(
-                                                  listing.seller.id,
-                                                  account ?? AddressZero
-                                                )}
-                                                tooltip={
-                                                  addressEqual(
+                                            {account ? (
+                                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <Button
+                                                  disabled={addressEqual(
                                                     listing.seller.id,
                                                     account ?? AddressZero
-                                                  )
-                                                    ? "You cannot purchase your own listing"
-                                                    : undefined
-                                                }
-                                                onClick={() => {
-                                                  if (
-                                                    data.collection?.standard
-                                                  ) {
-                                                    setModalProps({
-                                                      isOpen: true,
-                                                      targetNft: {
-                                                        metadata: {
-                                                          name:
-                                                            metadata.name ?? "",
-                                                          description:
-                                                            metadata.description ??
-                                                            "",
-                                                          image:
-                                                            metadata.image ??
-                                                            "",
-                                                        },
-                                                        payload: {
-                                                          ...listing,
-                                                          standard:
-                                                            data.collection
-                                                              .standard,
-                                                          tokenId:
-                                                            tokenInfo.tokenId,
-                                                        },
-                                                        collection:
-                                                          collectionName,
-                                                        slug,
-                                                      },
-                                                    });
+                                                  )}
+                                                  tooltip={
+                                                    addressEqual(
+                                                      listing.seller.id,
+                                                      account ?? AddressZero
+                                                    )
+                                                      ? "You cannot purchase your own listing"
+                                                      : undefined
                                                   }
-                                                }}
-                                                variant="secondary"
-                                              >
-                                                Purchase
-                                              </Button>
-                                            </td>
+                                                  onClick={() => {
+                                                    if (
+                                                      data.collection?.standard
+                                                    ) {
+                                                      setModalProps({
+                                                        isOpen: true,
+                                                        targetNft: {
+                                                          metadata: {
+                                                            name:
+                                                              metadata.name ??
+                                                              "",
+                                                            description:
+                                                              metadata.description ??
+                                                              "",
+                                                            image:
+                                                              metadata.image ??
+                                                              "",
+                                                          },
+                                                          payload: {
+                                                            ...listing,
+                                                            standard:
+                                                              data.collection
+                                                                .standard,
+                                                            tokenId:
+                                                              tokenInfo.tokenId,
+                                                          },
+                                                          collection:
+                                                            collectionName,
+                                                          slug,
+                                                        },
+                                                      });
+                                                    }
+                                                  }}
+                                                  variant="secondary"
+                                                >
+                                                  Purchase
+                                                </Button>
+                                              </td>
+                                            ) : null}
                                           </tr>
                                         )
                                       )}

@@ -63,6 +63,7 @@ import { targetNftT } from "../../../types";
 import { PurchaseItemModal } from "../../../components/PurchaseItemModal";
 import { Metadata, MetadataProps } from "../../../components/Metadata";
 import type { GetServerSidePropsContext } from "next";
+import { useEthers } from "@usedapp/core";
 
 const MAX_ITEMS_PER_PAGE = 48;
 
@@ -190,6 +191,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
   const [toggleGrid, setToggleGrid] = useState(false);
   const filters = getInititalFilters(formattedSearch);
   const { ethPrice } = useMagic();
+  const { account } = useEthers();
 
   const {
     id: formattedAddress,
@@ -1501,34 +1503,37 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                                           View Details
                                         </a>
                                       </Link>
-                                      <button
-                                        onClick={() => {
-                                          setModalProps({
-                                            isOpen: true,
-                                            targetNft: {
-                                              metadata: {
-                                                name: metadata.name ?? "",
-                                                description:
-                                                  metadata.metadata
-                                                    ?.description ?? "",
-                                                image:
-                                                  metadata.metadata?.image ??
-                                                  "",
+                                      {account ? (
+                                        <button
+                                          onClick={() => {
+                                            setModalProps({
+                                              isOpen: true,
+                                              targetNft: {
+                                                metadata: {
+                                                  name: metadata.name ?? "",
+                                                  description:
+                                                    metadata.metadata
+                                                      ?.description ?? "",
+                                                  image:
+                                                    metadata.metadata?.image ??
+                                                    "",
+                                                },
+                                                payload: {
+                                                  ...listing,
+                                                  standard:
+                                                    TokenStandard.ERC721,
+                                                  tokenId: metadata.tokenId,
+                                                },
+                                                slug,
+                                                collection: collectionName,
                                               },
-                                              payload: {
-                                                ...listing,
-                                                standard: TokenStandard.ERC721,
-                                                tokenId: metadata.tokenId,
-                                              },
-                                              slug,
-                                              collection: collectionName,
-                                            },
-                                          });
-                                        }}
-                                        className="w-full bg-red-500 bg-opacity-75 backdrop-filter backdrop-blur py-2 px-4 rounded-md text-sm font-medium text-white text-center"
-                                      >
-                                        Quick Buy
-                                      </button>
+                                            });
+                                          }}
+                                          className="w-full bg-red-500 bg-opacity-75 backdrop-filter backdrop-blur py-2 px-4 rounded-md text-sm font-medium text-white text-center"
+                                        >
+                                          Quick Buy
+                                        </button>
+                                      ) : null}
                                     </div>
                                   </>
                                 ) : (
