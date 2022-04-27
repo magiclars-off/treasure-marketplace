@@ -37,9 +37,8 @@ import { InboxIcon } from "@heroicons/react/solid";
 import { TreasureIcon } from "./Icons";
 
 const NEW_COLLECTIONS = [
-  "Realm",
-  "Smithonia Weapons",
-  "Tales of Elleria",
+  "KOTE Squires",
+  "SamuRise Land",
   "Toadstoolz",
   "Toadstoolz Itemz",
 ];

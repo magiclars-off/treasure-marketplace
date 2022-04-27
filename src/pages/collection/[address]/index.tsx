@@ -119,6 +119,17 @@ function range(value: number, start: number) {
     .map(String);
 }
 
+function hasAttributeArray(
+  value: unknown
+): value is Array<{ attribute: Record<"name" | "value", string> }> {
+  return (
+    Array.isArray(value) &&
+    "attribute" in value[0] &&
+    typeof value[0].attribute === "object" &&
+    "name" in value[0]?.attribute
+  );
+}
+
 const formatSearchFilter = (search: string | undefined) => {
   if (!search) return [];
 
@@ -1541,21 +1552,25 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                                         <Popover.Anchor />
                                         <Popover.Content className="rounded-md w-60 border border-gray-100 dark:border-gray-600 bg-white dark:bg-gray-600 shadow-md text-gray-200 px-2 py-3">
                                           <div className="space-y-2 flex items-center justify-center flex-col">
-                                            {(moreInfo.attributes ?? []).map(
-                                              (attribute) => (
-                                                <div
-                                                  key={attribute.attribute.name}
-                                                  className="flex items-center justify-between w-full"
-                                                >
-                                                  <p className="text-xs text-gray-600 font-bold dark:text-gray-400 truncate">
-                                                    {attribute.attribute.name}
-                                                  </p>
-                                                  <p className="text-xs text-gray-500 dark:text-gray-300 truncate">
-                                                    {attribute.attribute.value}
-                                                  </p>
-                                                </div>
-                                              )
-                                            )}
+                                            {hasAttributeArray(
+                                              moreInfo.attributes
+                                            )
+                                              ? moreInfo.attributes.map(
+                                                  ({ attribute }) => (
+                                                    <div
+                                                      key={attribute.name}
+                                                      className="flex items-center justify-between w-full"
+                                                    >
+                                                      <p className="text-xs text-gray-600 font-bold dark:text-gray-400 truncate">
+                                                        {attribute.name}
+                                                      </p>
+                                                      <p className="text-xs text-gray-500 dark:text-gray-300 truncate">
+                                                        {attribute.value}
+                                                      </p>
+                                                    </div>
+                                                  )
+                                                )
+                                              : null}
                                           </div>
                                           <Popover.Arrow className="text-gray-100 dark:text-gray-600 fill-current" />
                                         </Popover.Content>

@@ -153,7 +153,8 @@ const unique = <T,>(array: T[]) => Array.from(new Set(array));
 const reduceAttributes = (
   attributes: NonNullable<
     GetCollectionAttributesQuery["collection"]
-  >["attributes"]
+  >["attributes"],
+  collectionName?: string
 ): {
   [key: string]: { value: string; percentage: string }[];
 } | null => {
@@ -162,19 +163,21 @@ const reduceAttributes = (
         [key: string]: { value: string; percentage: string }[];
       }>((acc, attribute) => {
         // TODO: Review, but works for now
-        switch (attribute.name) {
-          case "Agility":
-          case "Endurance":
-          case "Intelligence":
-          case "Strength":
-          case "Vitality":
-          case "Will":
+        switch (true) {
+          case [
+            "Agility",
+            "Endurance",
+            "Intelligence",
+            "Strength",
+            "Vitality",
+            "Will",
+          ].includes(attribute.name) && collectionName === "Tales of Elleria":
             acc[attribute.name] = [10, 20, 30, 40, 50, 60, 70, 80, 90].map(
               (value) => ({ percentage: "", value: `>= ${value}` })
             );
 
             break;
-          case "Total Stats":
+          case attribute.name === "Total Stats":
             acc[attribute.name] = [
               200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420,
             ].map((value) => ({ percentage: "", value: `>= ${value}` }));
@@ -383,7 +386,10 @@ export function useFiltersList() {
       case isSmithoniaWeaponsItem:
         return reduceAttributes(smithoniaWeaponsAttributes.data);
       case isShared:
-        return reduceAttributes(sharedAttributes.data?.attributes);
+        return reduceAttributes(
+          sharedAttributes.data?.attributes,
+          collectionName
+        );
       default:
         return reduceAttributes(legacyAttributes.data?.collection?.attributes);
     }
