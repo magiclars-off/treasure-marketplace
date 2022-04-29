@@ -809,7 +809,7 @@ export function useMetadata(
               } = {},
             ],
           } = item;
-          const image = "/img/realm.png";
+          const image = "/img/realm.jpg";
           const name = `Realm #${item.id}`;
           const id = `${collection.address}-0x${parseInt(item.id, 16)}`;
           const attributes = [

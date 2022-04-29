@@ -1191,7 +1191,7 @@ const Inventory = ({ og }: { og: MetadataProps }) => {
                                   name: `${token.collection.name} #${token.tokenId}`,
                                   tokenId: token.tokenId,
                                   metadata: {
-                                    image: "/img/realm.png",
+                                    image: "/img/realm.jpg",
                                     name: `${token.collection.name} #${token.tokenId}`,
                                     description: token.collection.name,
                                   },

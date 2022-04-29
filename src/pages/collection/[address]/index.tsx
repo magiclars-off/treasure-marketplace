@@ -1469,7 +1469,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                                 name: `${collectionName} #${listing.token.tokenId}`,
                                 tokenId: listing.token.tokenId,
                                 metadata: {
-                                  image: "/img/realm.png",
+                                  image: "/img/realm.jpg",
                                   name: `${collectionName} #${listing.token.tokenId}`,
                                   description: collectionName,
                                 },

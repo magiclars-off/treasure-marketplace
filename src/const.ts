@@ -2,7 +2,7 @@ import { ChainId } from "@usedapp/core";
 import smolBodiesImg from "../public/img/smolbodies.png";
 import toadstoolzImg from "../public/img/toadstoolz.jpg";
 import peekabooImg from "../public/img/peekaboo.svg";
-import realmImg from "../public/img/realm.png";
+import realmImg from "../public/img/realm.jpg";
 
 export const Contracts = {
   [ChainId.ArbitrumRinkeby]: {

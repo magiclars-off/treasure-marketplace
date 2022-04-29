@@ -425,7 +425,7 @@ export function Activity({ title, includeStatus }: ListingProps) {
                         name: `${collectionName} #${activity.token.tokenId}`,
                         tokenId: activity.token.tokenId,
                         metadata: {
-                          image: "/img/realm.png",
+                          image: "/img/realm.jpg",
                           name: `${collectionName} #${activity.token.tokenId}`,
                           description: collectionName ?? "",
                         },
@@ -628,7 +628,7 @@ export function Activity({ title, includeStatus }: ListingProps) {
                     name: `${collectionName} #${activity.token.tokenId}`,
                     tokenId: activity.token.tokenId,
                     metadata: {
-                      image: "/img/realm.png",
+                      image: "/img/realm.jpg",
                       name: `${collectionName} #${activity.token.tokenId}`,
                       description: collectionName ?? "",
                     },
