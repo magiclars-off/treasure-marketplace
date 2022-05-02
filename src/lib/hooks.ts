@@ -941,7 +941,7 @@ export function useMetadata(
 }
 
 export const useGridSizeState = () => {
-  return useLocalStorage("large-grid", {
+  return useLocalStorage("mp:large-grid", {
     defaultValue: true,
   });
 };
