@@ -1,29 +1,54 @@
-import type { Nft } from "../../types";
-
+import { AddressZero } from "@ethersproject/constants";
+import { Dialog, Listbox, Transition } from "@headlessui/react";
+import { ExclamationIcon, XIcon } from "@heroicons/react/outline";
+import { CheckIcon, SelectorIcon } from "@heroicons/react/solid";
+import { useEthers } from "@usedapp/core";
+import classNames from "clsx";
+import { addMonths, addWeeks, closestIndexTo, formatDistanceToNow, isAfter } from "date-fns";
+import { ethers } from "ethers";
+import { formatEther } from "ethers/lib/utils";
+import type { GetServerSidePropsContext } from "next";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import {
   Fragment,
   useCallback,
   useEffect,
   useMemo,
   useReducer,
-  useState,
+  useState
 } from "react";
-import { Dialog, Transition, Listbox } from "@headlessui/react";
-import { XIcon } from "@heroicons/react/outline";
-import { SelectorIcon, CheckIcon, ViewGridIcon } from "@heroicons/react/solid";
-import { ExclamationIcon } from "@heroicons/react/outline";
-import classNames from "clsx";
+import { useQuery } from "react-query";
+import { TokenStandard } from "../../../generated/queries.graphql";
+import { Activity } from "../../components/Activity";
+import Button from "../../components/Button";
+import { CenterLoadingDots } from "../../components/CenterLoadingDots";
+import {
+  Filters,
+  MobileFilterButton,
+  MobileFiltersWrapper,
+  useFilters,
+  useFiltersList
+} from "../../components/Filters";
+import { GridSizeToggle } from "../../components/GridToggle";
+import ImageWrapper from "../../components/ImageWrapper";
+import { Metadata, MetadataProps } from "../../components/Metadata";
+import { Modal } from "../../components/Modal";
+import {
+  BridgeworldItems,
+  DAO_FEE,
+  METADATA_COLLECTIONS,
+  smolverseItems
+} from "../../const";
+import { useMagic } from "../../context/magicContext";
 import {
   bridgeworld,
   client,
   marketplace,
   metadata,
   realm,
-  smolverse,
+  smolverse
 } from "../../lib/client";
-import { useQuery } from "react-query";
-import { addMonths, addWeeks, closestIndexTo, isAfter } from "date-fns";
-import { ethers } from "ethers";
 import {
   useApproveContract,
   useBattleflyMetadata,
@@ -32,40 +57,14 @@ import {
   useContractApprovals,
   useCreateListing,
   useFoundersMetadata,
+  useGridSizeState,
   useRemoveListing,
   useSmithoniaWeaponsMetadata,
-  useUpdateListing,
+  useUpdateListing
 } from "../../lib/hooks";
-import { AddressZero } from "@ethersproject/constants";
+import type { Nft } from "../../types";
 import { formatNumber, formatPercent, generateIpfsLink } from "../../utils";
-import { useRouter } from "next/router";
-import Button from "../../components/Button";
-import ImageWrapper from "../../components/ImageWrapper";
-import Link from "next/link";
-import { CenterLoadingDots } from "../../components/CenterLoadingDots";
-import { formatEther } from "ethers/lib/utils";
-import { formatDistanceToNow } from "date-fns";
-import {
-  BridgeworldItems,
-  DAO_FEE,
-  METADATA_COLLECTIONS,
-  smolverseItems,
-} from "../../const";
-import { TokenStandard } from "../../../generated/queries.graphql";
-import { useMagic } from "../../context/magicContext";
-import { Activity } from "../../components/Activity";
-import { Modal } from "../../components/Modal";
-import { useEthers } from "@usedapp/core";
-import {
-  Filters,
-  MobileFilterButton,
-  MobileFiltersWrapper,
-  useFilters,
-  useFiltersList,
-} from "../../components/Filters";
-import type { GetServerSidePropsContext } from "next";
-import { Metadata, MetadataProps } from "../../components/Metadata";
-import { LargeGridIcon } from "../../components/Icons";
+
 
 type DrawerProps = {
   actions: Array<"create" | "remove" | "update">;
@@ -728,7 +727,7 @@ const Drawer = ({
 const Inventory = ({ og }: { og: MetadataProps }) => {
   const router = useRouter();
   const [nft, setNft] = useState<Nft | null>(null);
-  const [toggleGrid, setToggleGrid] = useState(false);
+  const [gridSize] = useGridSizeState();
   const { account } = useEthers();
   const [section] = router.query.section ?? [""];
 
@@ -991,20 +990,7 @@ const Inventory = ({ og }: { og: MetadataProps }) => {
                     {section === "" ? (
                       <>
                         <MobileFilterButton />
-                        <button
-                          type="button"
-                          className="hidden lg:p-2 lg:m-2 lg:text-gray-400 lg:hover:text-gray-500 lg:flex"
-                          onClick={() => setToggleGrid(!toggleGrid)}
-                        >
-                          {toggleGrid ? (
-                            <LargeGridIcon aria-hidden="true" />
-                          ) : (
-                            <ViewGridIcon
-                              className="w-5 h-5"
-                              aria-hidden="true"
-                            />
-                          )}
-                        </button>
+                        <GridSizeToggle />
                       </>
                     ) : null}
                   </div>
@@ -1081,7 +1067,7 @@ const Inventory = ({ og }: { og: MetadataProps }) => {
                           className={classNames(
                             "grid grid-cols-2 gap-y-10 md:grid-cols-4 gap-x-6 xl:gap-x-8",
                             section === ""
-                              ? toggleGrid
+                              ? gridSize
                                 ? "lg:grid-cols-6"
                                 : "lg:grid-cols-4"
                               : ""

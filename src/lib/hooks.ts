@@ -37,6 +37,7 @@ import {
 import { AddressZero } from "@ethersproject/constants";
 import { normalizeBridgeworldTokenMetadata } from "../utils/metadata";
 import { GetBridgeworldMetadataQuery } from "../../generated/bridgeworld.graphql";
+import useLocalStorage from "use-local-storage-state";
 
 type WebhookBody = {
   collection: string;
@@ -938,3 +939,9 @@ export function useMetadata(
 
   return { allMetadataLoaded, data, getMetadata };
 }
+
+export const useGridSizeState = () => {
+  return useLocalStorage("large-grid", {
+    defaultValue: true,
+  });
+};
