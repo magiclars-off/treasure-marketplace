@@ -1,8 +1,6 @@
 import Router, { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
-import { InformationCircleIcon, ViewGridIcon } from "@heroicons/react/solid";
-import LargeGridIcon from "../../../components/LargeGridIcon";
-
+import { InformationCircleIcon } from "@heroicons/react/solid";
 import { useInfiniteQuery, useQueries, useQuery } from "react-query";
 import {
   bridgeworld,
@@ -39,6 +37,7 @@ import {
   useBattleflyMetadata,
   useCollection,
   useFoundersMetadata,
+  useGridSizeState,
   useSmithoniaWeaponsMetadata,
 } from "../../../lib/hooks";
 import { EthIcon, MagicIcon, SwapIcon } from "../../../components/Icons";
@@ -64,6 +63,7 @@ import { PurchaseItemModal } from "../../../components/PurchaseItemModal";
 import { Metadata, MetadataProps } from "../../../components/Metadata";
 import type { GetServerSidePropsContext } from "next";
 import { useEthers } from "@usedapp/core";
+import { GridSizeToggle } from "../../../components/GridToggle";
 
 const MAX_ITEMS_PER_PAGE = 48;
 
@@ -188,7 +188,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
     targetNft: null,
   });
   const [floorCurrency, setFloorCurrency] = useState<"magic" | "eth">("magic");
-  const [toggleGrid, setToggleGrid] = useState(false);
+  const [gridSize] = useGridSizeState();
   const filters = getInititalFilters(formattedSearch);
   const { ethPrice } = useMagic();
   const { account } = useEthers();
@@ -1069,22 +1069,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                         isERC1155 ? -1 : sortOptions.length
                       )}
                     />
-                    {attributeFilterList && (
-                      <button
-                        type="button"
-                        className="hidden lg:p-2 lg:m-2 lg:text-gray-400 lg:hover:text-gray-500 lg:flex"
-                        onClick={() => setToggleGrid(!toggleGrid)}
-                      >
-                        {toggleGrid ? (
-                          <LargeGridIcon aria-hidden="true" />
-                        ) : (
-                          <ViewGridIcon
-                            className="w-5 h-5"
-                            aria-hidden="true"
-                          />
-                        )}
-                      </button>
-                    )}
+                    {attributeFilterList && <GridSizeToggle />}
                   </div>
                 )}
               </section>
@@ -1106,7 +1091,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                     role="list"
                     className={classNames(
                       `grid grid-cols-2 gap-y-10 sm:grid-cols-4 2xl:grid-cols-${
-                        toggleGrid ? 6 : 4
+                        gridSize ? 6 : 4
                       } gap-x-6 xl:gap-x-8`,
                       {
                         "2xl:grid-cols-4": attributeFilterList,
