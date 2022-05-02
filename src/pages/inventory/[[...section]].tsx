@@ -63,9 +63,9 @@ import {
   useFilters,
   useFiltersList,
 } from "../../components/Filters";
-import LargeGridIcon from "../../components/LargeGridIcon";
 import type { GetServerSidePropsContext } from "next";
 import { Metadata, MetadataProps } from "../../components/Metadata";
+import { LargeGridIcon } from "../../components/Icons";
 
 type DrawerProps = {
   actions: Array<"create" | "remove" | "update">;

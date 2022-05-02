@@ -1,8 +1,6 @@
 import Router, { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { InformationCircleIcon, ViewGridIcon } from "@heroicons/react/solid";
-import LargeGridIcon from "../../../components/LargeGridIcon";
-
 import { useInfiniteQuery, useQueries, useQuery } from "react-query";
 import {
   bridgeworld,
@@ -41,7 +39,7 @@ import {
   useFoundersMetadata,
   useSmithoniaWeaponsMetadata,
 } from "../../../lib/hooks";
-import { EthIcon, MagicIcon, SwapIcon } from "../../../components/Icons";
+import { EthIcon, LargeGridIcon, MagicIcon, SwapIcon } from "../../../components/Icons";
 import { useMagic } from "../../../context/magicContext";
 import {
   ALL_COLLECTION_METADATA,
