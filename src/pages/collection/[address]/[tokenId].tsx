@@ -68,6 +68,7 @@ import {
   METADATA_COLLECTIONS,
   smolverseItems,
 } from "../../../const";
+import { CollectionLinks } from "../../../components/CollectionLinks";
 
 const MAX_ITEMS_PER_PAGE = 10;
 
@@ -348,12 +349,17 @@ export default function TokenDetails({ og }: { og: MetadataProps }) {
         )}
         {data?.collection && tokenInfo && allMetadataLoaded && (
           <>
-            <Link href={`/collection/${slugOrAddress}`} passHref>
-              <a className="text-gray-600 dark:text-gray-400 dark:hover:text-gray-500 inline-flex items-center space-x-2 hover:text-gray-800">
-                <ArrowLeftIcon className="h-3 w-3" />
-                <p className="capsize text-xs">Back to Collection</p>
-              </a>
-            </Link>
+            <div className="flex gap-2 flex-col md:flex-row justify-between">
+              <Link href={`/collection/${slugOrAddress}`} passHref>
+                <a className="text-gray-600 dark:text-gray-400 dark:hover:text-gray-500 inline-flex items-center space-x-2 hover:text-gray-800">
+                  <ArrowLeftIcon className="h-3 w-3" />
+                  <p className="capsize text-xs">Back to Collection</p>
+                </a>
+              </Link>
+              <div className="flex">
+                <CollectionLinks />
+              </div>
+            </div>
             <div className="lg:grid lg:grid-cols-5 lg:gap-x-8 lg:items-start mt-8">
               <div className="lg:col-span-2">
                 <div className="w-full aspect-w-1 aspect-h-1">
@@ -471,7 +477,7 @@ export default function TokenDetails({ og }: { og: MetadataProps }) {
                           className="relative inline-flex items-center px-4 py-2 rounded-md border border-gray-300 bg-white dark:bg-transparent text-sm font-medium text-gray-500 dark:text-gray-200 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 dark:focus:ring-gray-500 dark:focus:border-gray-500"
                           onClick={() => setTransferModalOpen(true)}
                         >
-                          <span className="sr-only">Previous</span>
+                          <span className="sr-only">Transfer NFT</span>
                           <SwitchHorizontalIcon
                             className="h-7 w-7"
                             aria-hidden="true"

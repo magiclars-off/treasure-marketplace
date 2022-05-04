@@ -64,6 +64,7 @@ import { Metadata, MetadataProps } from "../../../components/Metadata";
 import type { GetServerSidePropsContext } from "next";
 import { useEthers } from "@usedapp/core";
 import { GridSizeToggle } from "../../../components/GridToggle";
+import { CollectionLinks } from "../../../components/CollectionLinks";
 
 const MAX_ITEMS_PER_PAGE = 48;
 
@@ -925,13 +926,19 @@ const Collection = ({ og }: { og: MetadataProps }) => {
   }, [listings, inView]);
 
   const description = COLLECTION_DESCRIPTIONS[slug] ?? null;
+  const info = ALL_COLLECTION_METADATA.find((item) => item.href === slug);
+  const related = info?.related
+    ?.map((related) =>
+      ALL_COLLECTION_METADATA.find((item) => item.href === related)
+    )
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
 
   return (
     <div>
       <MobileFiltersWrapper />
       <Metadata {...og} />
       <div className="mx-auto px-4 sm:px-6 lg:px-8 pt-24">
-        <div className="py-24 flex flex-col items-center">
+        <div className="py-16 flex flex-col items-center">
           {statData?.collection ? (
             <>
               <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100">
@@ -1026,6 +1033,35 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                   </div>
                 </dl>
               </div>
+              <div className="mt-12 flex">
+                <CollectionLinks />
+              </div>
+              {related ? (
+                <div className="mt-12 flex flex-col md:flex-row items-center text-gray-600">
+                  Related:
+                  {related.map((item, index, array) => (
+                    <Link
+                      key={item.href}
+                      href={`/collection/${item.href}`}
+                      passHref
+                    >
+                      <a
+                        className={classNames(
+                          "relative w-full md:w-auto px-4 py-2 text-center border border-gray-300 bg-white dark:bg-transparent text-sm font-medium text-gray-500 dark:text-gray-200 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 dark:focus:ring-gray-500 dark:focus:border-gray-500",
+                          index === 0
+                            ? "mt-2 md:mt-0 md:ml-2 md:border-l border-t rounded-t-md md:rounded-t-none md:!rounded-l-md"
+                            : "border-t-0 md:border-t md:border-l-0",
+                          index === array.length - 1
+                            ? "rounded-b-md md:!rounded-r-md md:rounded-b-none"
+                            : undefined
+                        )}
+                      >
+                        {item.name}
+                      </a>
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
             </>
           ) : (
             <div className="animate-pulse w-56 bg-gray-300 h-12 rounded-md m-auto" />
