@@ -2,14 +2,10 @@ import Image from "next/image";
 
 import logoImg from "../../public/img/logotransparent.png";
 import Link from "next/link";
-import { useCollection } from "../lib/hooks";
 import { Metadata } from "../components/Metadata";
 import { BATTLEFLY, COLLECTION_METADATA, TOADSTOOLZ } from "../const";
 
 export default function Home() {
-  // Temporary until after launched, will dynamically update homepage
-  const toadstoolzLaunched = Boolean(useCollection("toadstoolz").id);
-
   return (
     <div className="relative">
       <Metadata
@@ -40,9 +36,9 @@ export default function Home() {
 
           <div className="grid gap-4 grid-cols-2 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-8">
             {COLLECTION_METADATA.slice(0, 3)
-              .concat(toadstoolzLaunched ? TOADSTOOLZ : BATTLEFLY)
+              .concat(TOADSTOOLZ)
               .concat(COLLECTION_METADATA.slice(3, 7))
-              .concat(toadstoolzLaunched ? BATTLEFLY : [])
+              .concat(BATTLEFLY)
               .concat(COLLECTION_METADATA.slice(7))
               .map((product) => (
                 <div

@@ -81,7 +81,7 @@ export const TOADSTOOLZ = {
   tools: "toadstoolz",
   twitter: "toadstoolzNFT",
   website: "https://toadstoolz.lol",
-} as const;
+} as CollectionData;
 
 export const BATTLEFLY = {
   href: "battlefly",
@@ -91,7 +91,7 @@ export const BATTLEFLY = {
     "BattleFly is an experimental PVP/P2E strategy game, powered by $MAGIC.",
   related: ["battlefly-v1-founders-nft", "battlefly-v2-founders-nft"],
   ...BATTLEFLY_DATA,
-} as const;
+} as CollectionData;
 
 const BATTLEFLY_FOUNDERS_V1 = {
   href: "battlefly-v1-founders-nft",
