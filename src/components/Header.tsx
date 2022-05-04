@@ -98,6 +98,7 @@ const Header = () => {
             (collection, index, array) =>
               array.findIndex((item) => item.name === collection.name) === index
           )
+          .filter((collection) => collection.name !== "Legions")
           .map((collection) => {
             const key = `/collection/${getCollectionSlugFromName(
               collection.name
@@ -120,6 +121,7 @@ const Header = () => {
             (token, index, array) =>
               array.findIndex((item) => item.id === token.id) === index
           )
+          .filter((token) => token.name !== "Recruit")
           .map((token) => {
             const key = `/collection/${getCollectionSlugFromName(
               token.collection.name
