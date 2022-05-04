@@ -206,6 +206,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
   const isTreasure = collectionName === "Treasures";
   const isShared = METADATA_COLLECTIONS.includes(collectionName);
   const isRealm = collectionName === "Realm";
+  const isSmolCars = collectionName === "Smol Cars";
   const isBattleflyItem = collectionName === "BattleFly";
   const isFoundersItem = collectionName.includes("Founders");
   const isSmithonia = collectionName === "Smithonia Weapons";
@@ -271,8 +272,8 @@ const Collection = ({ og }: { og: MetadataProps }) => {
       ),
     [formattedAddress, formattedSearch]
   );
-  const filteredSmolTokens = useQuery(
-    ["filtered-tokens", listedTokens.data, attributeIds],
+  const filteredCarsTokens = useQuery(
+    ["cars-filtered-tokens", listedTokens.data, attributeIds],
     () =>
       client.getFilteredTokens({
         attributeIds,
@@ -280,14 +281,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
       }),
     {
       enabled:
-        Boolean(listedTokens.data) &&
-        attributeIds.length > 0 &&
-        !isBridgeworldItem &&
-        !isSmolverseItem &&
-        !isBattleflyItem &&
-        !isShared &&
-        !isRealm &&
-        !isTreasure,
+        Boolean(listedTokens.data) && attributeIds.length > 0 && isSmolCars,
       select: React.useCallback(
         ({
           metadataAttributes,
@@ -586,6 +580,52 @@ const Collection = ({ og }: { og: MetadataProps }) => {
           : [],
     };
   }, [filteredSharedTokensQueries]);
+  const filteredSmolverseTokensQueries = useQueries({
+    queries: Object.entries(filters).map(([name, value]) => ({
+      queryKey: ["smolverse-filtered-tokens", listedTokens.data, name, value],
+      queryFn: () => {
+        const onlyNumbers = value[0].replace(/^(>|=|<|\s)*(\d+)$/, "$2");
+        const isNumber =
+          onlyNumbers !== value[0] || !Number.isNaN(Number(value[0]));
+        const number = Number(onlyNumbers);
+        const filter = {
+          value_in: isNumber ? range(number, number <= 100 ? 101 : 446) : value,
+        };
+
+        return smolverse.getFilteredTokens({
+          filter: { name, ...filter },
+          tokenIds: listedTokens.data ?? [],
+        });
+      },
+      enabled:
+        Boolean(listedTokens.data) &&
+        Object.keys(filters).length > 0 &&
+        isSmolverseItem,
+    })),
+  }).filter((query) => query.status !== "loading");
+  const filteredSmolverseTokens = React.useMemo(() => {
+    if (filteredSmolverseTokensQueries.length === 0) {
+      return { data: undefined };
+    }
+
+    const data = filteredSmolverseTokensQueries
+      .map(
+        ({ data }) =>
+          data?.attributes.flatMap((attribute) =>
+            attribute.tokens.map((token) => token.id)
+          ) ?? []
+      )
+      .filter((item): item is string[] => item.length > 0);
+
+    return {
+      data:
+        data.length > 0
+          ? data.reduce((acc, result) =>
+              acc.filter((item) => result.includes(item))
+            )
+          : [],
+    };
+  }, [filteredSmolverseTokensQueries]);
   const filteredRealmStructureTokens = useQuery(
     ["realm-filtered-structure-tokens", listedTokens.data, filters],
     () =>
@@ -671,7 +711,8 @@ const Collection = ({ og }: { og: MetadataProps }) => {
       filteredRealmTokens.data,
       filteredTreasureTokens.data,
       filteredBridgeworldTokens.data,
-      filteredSmolTokens.data,
+      filteredSmolverseTokens.data,
+      filteredCarsTokens.data,
       listedTokens.data,
       searchParams,
     ],
@@ -689,7 +730,8 @@ const Collection = ({ og }: { og: MetadataProps }) => {
           filteredRealmTokens.data ??
           filteredTreasureTokens.data ??
           filteredBridgeworldTokens.data ??
-          filteredSmolTokens.data ??
+          filteredSmolverseTokens.data ??
+          filteredCarsTokens.data ??
           listedTokens.data ??
           [],
       });
@@ -723,7 +765,8 @@ const Collection = ({ og }: { og: MetadataProps }) => {
       filteredRealmTokens.data ??
       filteredTreasureTokens.data ??
       filteredBridgeworldTokens.data ??
-      filteredSmolTokens.data ??
+      filteredSmolverseTokens.data ??
+      filteredCarsTokens.data ??
       listedTokens.data,
     [
       searchedTokens.data,
@@ -733,7 +776,8 @@ const Collection = ({ og }: { og: MetadataProps }) => {
       filteredRealmTokens.data,
       filteredTreasureTokens.data,
       filteredBridgeworldTokens.data,
-      filteredSmolTokens.data,
+      filteredSmolverseTokens.data,
+      filteredCarsTokens.data,
       listedTokens.data,
     ]
   );
@@ -781,12 +825,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
     ["metadata", listingIds],
     () => client.getCollectionMetadata({ ids: listingIds }),
     {
-      enabled:
-        listingIds.length > 0 &&
-        !isBridgeworldItem &&
-        !isSmolverseItem &&
-        !isShared &&
-        !isRealm,
+      enabled: listingIds.length > 0 && isSmolCars,
       refetchInterval: false,
       keepPreviousData: true,
     }

@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/solid";
 import { GetCollectionAttributesQuery } from "../../generated/queries.graphql";
 import { GetUserInventoryQuery } from "../../generated/marketplace.graphql";
-import { bridgeworld, client, metadata } from "../lib/client";
+import { bridgeworld, client, metadata, smolverse } from "../lib/client";
 import { formatPercent } from "../utils";
 import { useRouter } from "next/router";
 import { useCollection, useEthers } from "../lib/hooks";
@@ -16,7 +16,7 @@ import Button from "./Button";
 import React from "react";
 import classNames from "clsx";
 import useLocalStorage from "use-local-storage-state";
-import { METADATA_COLLECTIONS } from "../const";
+import { METADATA_COLLECTIONS, smolverseItems } from "../const";
 
 type Attribute = {
   name: string;
@@ -183,6 +183,8 @@ const reduceAttributes = (
             ].map((value) => ({ percentage: "", value: `>= ${value}` }));
 
             break;
+          case ["IQ", "Plates"].includes(attribute.name):
+            break;
           default:
             acc[attribute.name] = [
               ...(acc[attribute.name] ?? []),
@@ -219,9 +221,12 @@ export function useFiltersList() {
   const isTreasure = collectionName === "Treasures";
   const isBattleflyItem = collectionName === "BattleFly";
   const isSmithoniaWeaponsItem = collectionName === "Smithonia Weapons";
+  const isSmolCars = collectionName === "Smol Cars";
   const isShared = METADATA_COLLECTIONS.includes(collectionName);
+  const isSmolverseItem = smolverseItems.includes(collectionName);
   const isInventory = router.pathname.startsWith("/inventory/");
 
+  // Only for Smol Cars, get them moved.
   const legacyAttributes = useQuery(
     ["legacy-attributes", formattedAddress],
     () =>
@@ -229,7 +234,7 @@ export function useFiltersList() {
         id: formattedAddress,
       }),
     {
-      enabled: !!formattedAddress,
+      enabled: isSmolCars,
       refetchInterval: false,
     }
   );
@@ -289,6 +294,14 @@ export function useFiltersList() {
     () => metadata.getCollectionAttributes({ collection: formattedAddress }),
     {
       enabled: isShared,
+      refetchInterval: false,
+    }
+  );
+  const smolverseAttributes = useQuery(
+    ["smolverse-attributes", formattedAddress],
+    () => smolverse.getCollectionAttributes({ collection: formattedAddress }),
+    {
+      enabled: isSmolverseItem,
       refetchInterval: false,
     }
   );
@@ -390,6 +403,8 @@ export function useFiltersList() {
           sharedAttributes.data?.attributes,
           collectionName
         );
+      case isSmolverseItem:
+        return reduceAttributes(smolverseAttributes.data?.attributes);
       default:
         return reduceAttributes(legacyAttributes.data?.collection?.attributes);
     }
@@ -400,8 +415,10 @@ export function useFiltersList() {
     isBattleflyItem,
     isInventory,
     isShared,
+    isSmolverseItem,
     isSmithoniaWeaponsItem,
     legacyAttributes.data?.collection?.attributes,
+    smolverseAttributes.data?.attributes,
     sharedAttributes.data?.attributes,
     smithoniaWeaponsAttributes.data,
     treasureBoosts.data,
