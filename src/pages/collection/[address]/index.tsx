@@ -826,7 +826,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
     ["metadata", listingIds],
     () => client.getCollectionMetadata({ ids: listingIds }),
     {
-      enabled: listingIds.length > 0 && isSmolCars,
+      enabled: listingIds.length > 0 && (isSmolCars || isTreasure),
       refetchInterval: false,
       keepPreviousData: true,
     }
