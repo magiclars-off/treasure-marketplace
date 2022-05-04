@@ -4,7 +4,13 @@ import { ExclamationIcon, XIcon } from "@heroicons/react/outline";
 import { CheckIcon, SelectorIcon } from "@heroicons/react/solid";
 import { useEthers } from "@usedapp/core";
 import classNames from "clsx";
-import { addMonths, addWeeks, closestIndexTo, formatDistanceToNow, isAfter } from "date-fns";
+import {
+  addMonths,
+  addWeeks,
+  closestIndexTo,
+  formatDistanceToNow,
+  isAfter,
+} from "date-fns";
 import { ethers } from "ethers";
 import { formatEther } from "ethers/lib/utils";
 import type { GetServerSidePropsContext } from "next";
@@ -16,7 +22,7 @@ import {
   useEffect,
   useMemo,
   useReducer,
-  useState
+  useState,
 } from "react";
 import { useQuery } from "react-query";
 import { TokenStandard } from "../../../generated/queries.graphql";
@@ -28,7 +34,7 @@ import {
   MobileFilterButton,
   MobileFiltersWrapper,
   useFilters,
-  useFiltersList
+  useFiltersList,
 } from "../../components/Filters";
 import { GridSizeToggle } from "../../components/GridToggle";
 import ImageWrapper from "../../components/ImageWrapper";
@@ -38,7 +44,7 @@ import {
   BridgeworldItems,
   DAO_FEE,
   METADATA_COLLECTIONS,
-  smolverseItems
+  smolverseItems,
 } from "../../const";
 import { useMagic } from "../../context/magicContext";
 import {
@@ -47,7 +53,7 @@ import {
   marketplace,
   metadata,
   realm,
-  smolverse
+  smolverse,
 } from "../../lib/client";
 import {
   useApproveContract,
@@ -60,11 +66,10 @@ import {
   useGridSizeState,
   useRemoveListing,
   useSmithoniaWeaponsMetadata,
-  useUpdateListing
+  useUpdateListing,
 } from "../../lib/hooks";
 import type { Nft } from "../../types";
 import { formatNumber, formatPercent, generateIpfsLink } from "../../utils";
-
 
 type DrawerProps = {
   actions: Array<"create" | "remove" | "update">;
@@ -133,8 +138,7 @@ function Breakdown({
   children,
   ethPrice,
   fee,
-  price,
-  quantity,
+  ...props
 }: {
   children: string;
   ethPrice?: string;
@@ -142,7 +146,8 @@ function Breakdown({
   price: string;
   quantity: string | number;
 }) {
-  const floatPrice = parseFloat(price || "0");
+  const price = parseFloat(props.price || "0");
+  const quantity = props.quantity || 0;
 
   return (
     <div className="flex justify-between px-2">
@@ -151,14 +156,13 @@ function Breakdown({
       </p>
       <div className="flex">
         <p>
-          ≈{" "}
-          {formatNumber(floatPrice * parseFloat(fee) * parseInt(`${quantity}`))}{" "}
+          ≈ {formatNumber(price * parseFloat(fee) * parseInt(`${quantity}`))}{" "}
           $MAGIC
         </p>
         {ethPrice ? (
           <>
             <p className="mx-1 text-gray-400">/</p>
-            <p>{formatNumber(floatPrice * parseFloat(ethPrice))} ETH</p>
+            <p>{formatNumber(price * parseFloat(ethPrice))} ETH</p>
           </>
         ) : null}
       </div>
@@ -201,6 +205,7 @@ const Drawer = ({
   const { ethPrice } = useMagic();
 
   const { fee } = useCollection(nft.address);
+  const max = Number(nft.total ?? 0);
 
   const isFormDisabled =
     needsContractApproval ||
@@ -209,6 +214,9 @@ const Drawer = ({
       removeListing.state.status,
       updateListing.state.status,
     ].includes("Mining");
+
+  const canSubmit =
+    !isFormDisabled && price.trim() !== "" && `${quantity}`.trim() !== "";
 
   const floorPrice = useQuery(
     ["floor-price", nft.collectionId, nft.tokenId],
@@ -502,95 +510,48 @@ const Drawer = ({
                             </div>
                             {nft.standard === TokenStandard.ERC1155 && (
                               <div>
-                                <Listbox
-                                  value={quantity}
-                                  onChange={setQuantity}
-                                  disabled={isFormDisabled}
-                                >
-                                  <div className="flex justify-between text-sm font-medium">
-                                    <Listbox.Label className="text-gray-700 dark:text-gray-300">
-                                      Quantity
-                                    </Listbox.Label>
-                                    <button
-                                      className="text-gray-500 dark:text-gray-400 transition-colors duration-300 motion-reduce:transition-none hover:text-red-500"
-                                      onClick={() =>
-                                        setQuantity(Number(nft.total ?? 0))
-                                      }
-                                    >
-                                      Max
-                                    </button>
-                                  </div>
-                                  <div className="mt-1 relative">
-                                    <Listbox.Button className="bg-white relative w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:disabled:bg-gray-500 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 dark:focus:ring-gray-300 dark:focus:border-gray-300 sm:text-sm disabled:text-gray-300 disabled:cursor-not-allowed transition-text ease-linear duration-300">
-                                      <span className="block truncate">
-                                        {quantity}
-                                      </span>
-                                      <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                        <SelectorIcon
-                                          className="h-5 w-5 text-gray-500 dark:text-gray-400"
-                                          aria-hidden="true"
-                                        />
-                                      </span>
-                                    </Listbox.Button>
+                                <div className="flex justify-between text-sm font-medium">
+                                  <label
+                                    htmlFor="quantity"
+                                    className="text-gray-700 dark:text-gray-300"
+                                  >
+                                    Quantity
+                                  </label>
+                                  <button
+                                    className="text-gray-500 dark:text-gray-400 transition-colors duration-300 motion-reduce:transition-none hover:text-red-500"
+                                    onClick={() =>
+                                      setQuantity(Number(nft.total ?? 0))
+                                    }
+                                  >
+                                    Max ({max.toLocaleString()})
+                                  </button>
+                                </div>
+                                <div className="mt-1 relative rounded-md shadow-sm">
+                                  <input
+                                    type="number"
+                                    name="quantity"
+                                    id="quantity"
+                                    className="form-input focus:ring-red-500 focus:border-red-500 dark:focus:ring-gray-300 dark:focus:border-gray-300 block w-full pr-16 sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:disabled:bg-gray-500 dark:placeholder-gray-400 rounded-md disabled:placeholder-gray-300 disabled:text-gray-300 transition-placeholder transition-text ease-linear duration-300 disabled:cursor-not-allowed"
+                                    placeholder="1"
+                                    maxLength={7}
+                                    min="0"
+                                    autoComplete="off"
+                                    aria-describedby="quantity"
+                                    onChange={(event) => {
+                                      const value = Number(event.target.value);
 
-                                    <Transition
-                                      as={Fragment}
-                                      leave="transition ease-in duration-100"
-                                      leaveFrom="opacity-100"
-                                      leaveTo="opacity-0"
-                                    >
-                                      <Listbox.Options className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-                                        {Array.from({
-                                          length: Number(nft.total) || 0,
-                                        }).map((_, idx) => (
-                                          <Listbox.Option
-                                            key={idx}
-                                            className={({ active }) =>
-                                              classNames(
-                                                active
-                                                  ? "text-white bg-red-600 dark:bg-gray-800"
-                                                  : "text-gray-900 dark:text-gray-200",
-                                                "cursor-default select-none relative py-2 pl-3 pr-9"
-                                              )
-                                            }
-                                            value={idx + 1}
-                                          >
-                                            {({ selected, active }) => (
-                                              <>
-                                                <span
-                                                  className={classNames(
-                                                    selected
-                                                      ? "font-semibold"
-                                                      : "font-normal",
-                                                    "block truncate"
-                                                  )}
-                                                >
-                                                  {idx + 1}
-                                                </span>
-
-                                                {selected ? (
-                                                  <span
-                                                    className={classNames(
-                                                      active
-                                                        ? "text-white"
-                                                        : "text-red-600 dark:text-gray-200",
-                                                      "absolute inset-y-0 right-0 flex items-center pr-4"
-                                                    )}
-                                                  >
-                                                    <CheckIcon
-                                                      className="h-5 w-5"
-                                                      aria-hidden="true"
-                                                    />
-                                                  </span>
-                                                ) : null}
-                                              </>
-                                            )}
-                                          </Listbox.Option>
-                                        ))}
-                                      </Listbox.Options>
-                                    </Transition>
-                                  </div>
-                                </Listbox>
+                                      setQuantity(
+                                        value > max
+                                          ? max
+                                          : event.target.value
+                                          ? value
+                                          : ""
+                                      );
+                                    }}
+                                    value={quantity}
+                                    disabled={isFormDisabled}
+                                  />
+                                </div>
                               </div>
                             )}
                           </div>
@@ -629,9 +590,7 @@ const Drawer = ({
                                   return (
                                     <Button
                                       key={idx}
-                                      disabled={
-                                        price.trim() === "" || isFormDisabled
-                                      }
+                                      disabled={!canSubmit}
                                       isLoading={
                                         createListing.state.status === "Mining"
                                       }
@@ -686,7 +645,7 @@ const Drawer = ({
                                 case "update":
                                   return (
                                     <Button
-                                      disabled={isFormDisabled}
+                                      disabled={!canSubmit}
                                       isLoading={
                                         updateListing.state.status === "Mining"
                                       }
