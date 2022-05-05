@@ -996,7 +996,7 @@ const Inventory = ({ og }: { og: MetadataProps }) => {
                     </div>
                   )}
                   {section == "activity" ? (
-                    <Activity includeStatus />
+                    <Activity />
                   ) : (
                     <section className="mt-8 pb-16">
                       {account ? (
