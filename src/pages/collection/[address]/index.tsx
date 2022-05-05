@@ -958,12 +958,6 @@ const Collection = ({ og }: { og: MetadataProps }) => {
               <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100">
                 {collectionName}
               </h1>
-              {description ? (
-                <p className="mt-8 text-sm md:text-base lg:text-xl text-gray-500 text-center max-w-lg lg:max-w-4xl">
-                  {description}
-                </p>
-              ) : null}
-              {generateDescription(collectionName)}
               <div className="mt-12 overflow-hidden relative">
                 <dl className="-mx-4 -mt-4 md:-mt-8 grid grid-cols-2 md:grid-cols-4 divide-y-2 divide-x-2 md:divide-y-0">
                   <div className="flex flex-col px-6 sm:px-8 py-4 md:pb-0 md:pt-8">
@@ -1067,6 +1061,12 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                   </div>
                 </dl>
               </div>
+              {description ? (
+                <p className="mt-8 text-sm md:text-base lg:text-xl text-gray-500 text-center max-w-lg lg:max-w-4xl">
+                  {description}
+                </p>
+              ) : null}
+              {generateDescription(collectionName)}
               <div className="mt-12 flex">
                 <CollectionLinks />
               </div>
