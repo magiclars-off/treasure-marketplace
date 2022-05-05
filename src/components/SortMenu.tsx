@@ -2,7 +2,7 @@ import { ChevronDownIcon } from "@heroicons/react/solid";
 import { Menu, Transition } from "@headlessui/react";
 import { OrderDirection } from "../../generated/marketplace.graphql";
 import { useRouter } from "next/router";
-import Link from "next/link";
+import QueryLink from "./QueryLink";
 import React from "react";
 import classNames from "clsx";
 
@@ -16,18 +16,6 @@ type SortMenuProps = {
   mobileFilterButtonSlot?: JSX.Element;
   options: SortOption[];
 };
-
-function QueryLink(
-  props: React.ComponentProps<typeof Link> & { className: string }
-) {
-  const { href, children, ...rest } = props;
-
-  return (
-    <Link href={href} passHref>
-      <a {...rest}>{children}</a>
-    </Link>
-  );
-}
 
 export function SortMenu({ mobileFilterButtonSlot, options }: SortMenuProps) {
   const router = useRouter();
@@ -44,7 +32,6 @@ export function SortMenu({ mobileFilterButtonSlot, options }: SortMenuProps) {
           />
         </Menu.Button>
         {mobileFilterButtonSlot}
-        {/* <MobileFilterButton /> */}
       </div>
 
       <Transition
@@ -72,7 +59,6 @@ export function SortMenu({ mobileFilterButtonSlot, options }: SortMenuProps) {
                         sort,
                       },
                     }}
-                    // passHref
                     className={classNames(
                       "block px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-500",
                       {

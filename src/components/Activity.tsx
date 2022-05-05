@@ -4,7 +4,7 @@ import {
   ChevronRightIcon,
   ShoppingCartIcon,
 } from "@heroicons/react/solid";
-import { CurrencyDollarIcon } from "@heroicons/react/outline";
+import { CurrencyDollarIcon, NewspaperIcon } from "@heroicons/react/outline";
 import { Fragment, useMemo } from "react";
 import {
   ListingFieldsFragment,
@@ -12,7 +12,7 @@ import {
   OrderDirection,
   Status,
 } from "../../generated/marketplace.graphql";
-import { Transition } from "@headlessui/react";
+import { Menu, Transition } from "@headlessui/react";
 import { formatDistanceToNow } from "date-fns";
 import { formatPrice, getCollectionSlugFromName } from "../utils";
 import {
@@ -43,6 +43,8 @@ import {
 } from "../const";
 import { SortMenu } from "./SortMenu";
 import { CenterLoadingDots } from "./CenterLoadingDots";
+import QueryLink from "./QueryLink";
+import classNames from "clsx";
 
 const sortOptions = [
   {
@@ -57,12 +59,40 @@ const sortOptions = [
   },
 ];
 
-type ListingProps = {
+const statusOptions = [
+  {
+    name: "All",
+    value: "all",
+  },
+  {
+    name: "Bought",
+    value: "bought",
+  },
+  {
+    name: "Listed",
+    value: "listed",
+  },
+  {
+    name: "Sold",
+    value: "sold",
+  },
+] as const;
+
+type ActivityProps = {
   title?: string;
-  includeStatus?: boolean;
 };
 
-export function Activity({ title, includeStatus }: ListingProps) {
+function useActivityType() {
+  const { pathname } = useRouter();
+
+  return pathname.startsWith("/inventory")
+    ? "mine"
+    : pathname.startsWith("/activity")
+    ? "all"
+    : "collection";
+}
+
+export function Activity({ title }: ActivityProps) {
   const router = useRouter();
   const { address: slugOrAddress } = router.query;
   const { account } = useEthers();
@@ -73,19 +103,36 @@ export function Activity({ title, includeStatus }: ListingProps) {
       ? router.query.sort.split(":")
       : [sortOptions[0].value, sortOptions[0].direction]
   ) as [Listing_OrderBy, OrderDirection];
+  const statusFilter = (router.query.status ??
+    "all") as typeof statusOptions[number]["value"];
 
-  const isAllActivity = router.pathname.startsWith("/activity");
-  const isMyActivity = router.pathname.startsWith("/inventory");
+  const type = useActivityType();
+  const isAllActivity = type !== "mine";
+  const isMyActivity = type === "mine";
   const wallet = account?.toLowerCase();
 
   const queries = useQueries({
     queries: [
       {
-        queryKey: ["activity", collection, orderBy, orderDirection],
+        queryKey: [
+          "activity",
+          collection,
+          orderBy,
+          orderDirection,
+          statusFilter,
+        ],
         queryFn: () =>
           marketplace.getActivity({
             filter: {
-              status: Status.Sold,
+              status_in: [Status.Active, Status.Sold].filter(
+                (_, index) =>
+                  index ===
+                  (statusFilter === "sold"
+                    ? 1
+                    : statusFilter === "listed"
+                    ? 0
+                    : index)
+              ),
               ...(collection ? { collection } : {}),
             },
             first: 100,
@@ -95,7 +142,13 @@ export function Activity({ title, includeStatus }: ListingProps) {
         enabled: isAllActivity ? !isMyActivity : !!collection,
       },
       {
-        queryKey: ["my-buy-activity", wallet],
+        queryKey: [
+          "my-buy-activity",
+          wallet,
+          orderBy,
+          orderDirection,
+          statusFilter,
+        ],
         queryFn: () =>
           marketplace.getActivity({
             filter: {
@@ -106,11 +159,17 @@ export function Activity({ title, includeStatus }: ListingProps) {
             orderBy,
             orderDirection,
           }),
-        enabled: isMyActivity ? !!account : false,
+        enabled: isMyActivity ? !!account && statusFilter !== "sold" : false,
         refetchInterval: 30_000,
       },
       {
-        queryKey: ["my-sold-activity", wallet],
+        queryKey: [
+          "my-sold-activity",
+          wallet,
+          orderBy,
+          orderDirection,
+          statusFilter,
+        ],
         queryFn: () =>
           marketplace.getActivity({
             filter: {
@@ -121,7 +180,7 @@ export function Activity({ title, includeStatus }: ListingProps) {
             orderBy,
             orderDirection,
           }),
-        enabled: isMyActivity ? !!account : false,
+        enabled: isMyActivity ? !!account && statusFilter !== "bought" : false,
         refetchInterval: 30_000,
       },
     ],
@@ -135,11 +194,20 @@ export function Activity({ title, includeStatus }: ListingProps) {
     return (
       queries
         .slice(1)
+        .filter(
+          (_, index) =>
+            index ===
+            (statusFilter === "sold"
+              ? 1
+              : statusFilter === "bought"
+              ? 0
+              : index)
+        )
         .flatMap((query) => query.data?.listings ?? [])
         // We have to re-sort to handle the merging of bought and sold.
         .sort((left, right) => right[orderBy] - left[orderBy])
     );
-  }, [isMyActivity, orderBy, queries]);
+  }, [isMyActivity, orderBy, queries, statusFilter]);
 
   const collections = useCollections();
 
@@ -244,7 +312,7 @@ export function Activity({ title, includeStatus }: ListingProps) {
   const smithoniaWeaponsMetadata = useSmithoniaWeaponsMetadata(smithoniaTokens);
 
   if (
-    (isMyActivity && queries.slice(1).some((query) => query.isLoading)) ||
+    (isMyActivity && queries.slice(1).every((query) => query.isLoading)) ||
     (isAllActivity && queries[0].isLoading)
   ) {
     return <CenterLoadingDots className="h-60" />;
@@ -263,7 +331,8 @@ export function Activity({ title, includeStatus }: ListingProps) {
                 Product filters
               </h2>
 
-              <div className="flex items-center">
+              <div className="flex items-center gap-4">
+                <StatusMenu />
                 <SortMenu options={sortOptions} />
               </div>
             </section>
@@ -273,14 +342,12 @@ export function Activity({ title, includeStatus }: ListingProps) {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 dark:bg-gray-500 sticky top-0">
                 <tr>
-                  {includeStatus && (
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                  )}
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                  >
+                    Status
+                  </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
@@ -327,6 +394,19 @@ export function Activity({ title, includeStatus }: ListingProps) {
                   const slugOrAddress =
                     getCollectionSlugFromName(collectionName) ??
                     activity.collection.id;
+
+                  const status = isMyActivity
+                    ? activity.buyer?.id === wallet
+                      ? "Bought"
+                      : "Sold"
+                    : activity.buyer?.id
+                    ? "Sold"
+                    : "Listed";
+
+                  const time = formatDistanceToNow(
+                    new Date(Number(activity.blockTimestamp) * 1000),
+                    { addSuffix: true }
+                  );
 
                   const legionsMetadata = legionMetadataData?.tokens.find(
                     (item) => item.id === activity.token.id
@@ -456,11 +536,9 @@ export function Activity({ title, includeStatus }: ListingProps) {
                           : "bg-gray-50 dark:bg-gray-300"
                       }
                     >
-                      {includeStatus && (
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-700">
-                          {activity.buyer?.id === wallet ? "Bought" : "Sold"}
-                        </td>
-                      )}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-700">
+                        {status}
+                      </td>
                       <td className="flex items-center px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-700">
                         {metadata?.metadata ? (
                           <ImageWrapper
@@ -495,21 +573,24 @@ export function Activity({ title, includeStatus }: ListingProps) {
                         {shortenAddress(activity.seller.id)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-700">
-                        {shortenAddress(activity.buyer?.id ?? "")}
+                        {activity.buyer?.id
+                          ? shortenAddress(activity.buyer.id)
+                          : "--"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-red-500 dark:text-gray-700">
-                        <a
-                          className="flex flex-1 items-center"
-                          href={activity.transactionLink ?? ""}
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          {formatDistanceToNow(
-                            new Date(Number(activity.blockTimestamp) * 1000),
-                            { addSuffix: true }
-                          )}
-                          <ExternalLinkIcon className="h-5 pl-2" />
-                        </a>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-gray-700">
+                        {status === "Listed" ? (
+                          time
+                        ) : (
+                          <a
+                            className="flex flex-1 items-center text-red-500"
+                            href={activity.transactionLink ?? ""}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            {time}
+                            <ExternalLinkIcon className="h-5 pl-2" />
+                          </a>
+                        )}
                       </td>
                     </tr>
                   );
@@ -530,6 +611,19 @@ export function Activity({ title, includeStatus }: ListingProps) {
               const slugOrAddress =
                 getCollectionSlugFromName(collectionName) ??
                 activity.collection.id;
+
+              const status = isMyActivity
+                ? activity.buyer?.id === wallet
+                  ? "Bought"
+                  : "Sold"
+                : activity.buyer?.id
+                ? "Sold"
+                : "Listed";
+
+              const time = formatDistanceToNow(
+                new Date(Number(activity.blockTimestamp) * 1000),
+                { addSuffix: true }
+              );
 
               const legionsMetadata = legionMetadataData?.tokens.find(
                 (item) => item.id === activity.token.id
@@ -684,13 +778,13 @@ export function Activity({ title, includeStatus }: ListingProps) {
                                 </span>
                               </span>
                             </span>
-                            {includeStatus ? (
-                              activity.seller?.id === wallet ? (
-                                <ShoppingCartIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
-                              ) : (
-                                <CurrencyDollarIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
-                              )
-                            ) : null}
+                            {status === "Bought" ? (
+                              <CurrencyDollarIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
+                            ) : status === "Listed" ? (
+                              <NewspaperIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
+                            ) : (
+                              <ShoppingCartIcon className="flex-shrink-0 h-5 w-5 text-gray-600" />
+                            )}
                             {open ? (
                               <ChevronDownIcon
                                 className="flex-shrink-0 h-5 w-5 text-gray-400"
@@ -716,40 +810,41 @@ export function Activity({ title, includeStatus }: ListingProps) {
                               href={`/collection/${slugOrAddress}/${activity.token.tokenId}`}
                               passHref
                             >
-                              <a className="text-red-500 hover:text-red-700 dark:text-gray-200 dark:hover:text-gray-300 text-sm flex items-center space-x-1">
+                              <a className="text-red-500 hover:text-red-700text-sm flex items-center space-x-1 sm:pr-8">
                                 View item
                               </a>
                             </Link>
-                            <div className="space-y-1 sm:pr-8">
+                            <div className="space-y-1 sm:px-8">
                               <p className="text-xs dark:text-gray-500">
                                 From:
                               </p>
                               <p>{shortenAddress(activity.seller.id)}</p>
                             </div>
-                            <div className="sm:px-8 space-y-1">
-                              <p className="text-xs dark:text-gray-500">To:</p>
-                              <p>{shortenAddress(activity.buyer?.id ?? "")}</p>
-                            </div>
+                            {activity.buyer?.id ? (
+                              <div className="sm:px-8 space-y-1">
+                                <p className="text-xs dark:text-gray-500">
+                                  To:
+                                </p>
+                                <p>{shortenAddress(activity.buyer.id)}</p>
+                              </div>
+                            ) : null}
                             <div className="sm:pl-8 space-y-1">
                               <p className="text-xs dark:text-gray-500">
                                 Time:
                               </p>
-                              <a
-                                className="flex items-center"
-                                href={activity.transactionLink ?? ""}
-                                rel="noreferrer"
-                                target="_blank"
-                              >
-                                {formatDistanceToNow(
-                                  new Date(
-                                    Number(activity.blockTimestamp) * 1000
-                                  ),
-                                  {
-                                    addSuffix: true,
-                                  }
-                                )}
-                                <ExternalLinkIcon className="h-4 m-[0.125rem] pl-1" />
-                              </a>
+                              {status === "Listed" ? (
+                                time
+                              ) : (
+                                <a
+                                  className="flex items-center text-red-500"
+                                  href={activity.transactionLink ?? ""}
+                                  rel="noreferrer"
+                                  target="_blank"
+                                >
+                                  {time}
+                                  <ExternalLinkIcon className="h-4 m-[0.125rem] pl-1" />
+                                </a>
+                              )}
                             </div>
                           </div>
                         </Disclosure.Panel>
@@ -763,5 +858,76 @@ export function Activity({ title, includeStatus }: ListingProps) {
         </div>
       </main>
     </div>
+  );
+}
+
+function StatusMenu() {
+  const router = useRouter();
+  const { pathname, query } = router;
+  const type = useActivityType();
+
+  const options = useMemo(
+    () =>
+      statusOptions.filter(
+        (option) => option.value !== (type === "mine" ? "listed" : "bought")
+      ),
+    [type]
+  );
+
+  return (
+    <Menu as="div" className="relative z-20 inline-block text-left">
+      <div className="flex items-center space-x-2">
+        <Menu.Button className="group inline-flex justify-center text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-200">
+          Status
+          <ChevronDownIcon
+            className="flex-shrink-0 -mr-1 ml-1 h-5 w-5 text-gray-400 group-hover:text-gray-500 dark:text-gray-400 dark:group-hover:text-gray-100"
+            aria-hidden="true"
+          />
+        </Menu.Button>
+      </div>
+
+      <Transition
+        as={Fragment}
+        enter="transition ease-out duration-100"
+        enterFrom="transform opacity-0 scale-95"
+        enterTo="transform opacity-100 scale-100"
+        leave="transition ease-in duration-75"
+        leaveFrom="transform opacity-100 scale-100"
+        leaveTo="transform opacity-0 scale-95"
+      >
+        <Menu.Items className="origin-top-left absolute right-0 z-10 mt-2 w-56 rounded-md shadow-2xl bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <div className="py-1">
+            {options.map((option, index) => {
+              const status = [option.value].join(":");
+              const active = query.status
+                ? query.status === status
+                : index === 0;
+
+              return (
+                <Menu.Item key={option.name}>
+                  <QueryLink
+                    href={{
+                      pathname,
+                      query: {
+                        ...query,
+                        status,
+                      },
+                    }}
+                    className={classNames(
+                      "block px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-500",
+                      {
+                        "text-red-500 dark:text-gray-100": active,
+                      }
+                    )}
+                  >
+                    <span>{option.name}</span>
+                  </QueryLink>
+                </Menu.Item>
+              );
+            })}
+          </div>
+        </Menu.Items>
+      </Transition>
+    </Menu>
   );
 }
