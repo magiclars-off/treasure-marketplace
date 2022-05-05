@@ -14,6 +14,7 @@ import { CenterLoadingDots } from "../../../components/CenterLoadingDots";
 import {
   abbreviatePrice,
   formatNumber,
+  formatPercent,
   formatPrice,
   getCollectionNameFromSlug,
 } from "../../../utils";
@@ -40,7 +41,13 @@ import {
   useGridSizeState,
   useSmithoniaWeaponsMetadata,
 } from "../../../lib/hooks";
-import { EthIcon, MagicIcon, SwapIcon } from "../../../components/Icons";
+import {
+  EthIcon,
+  MagicIcon,
+  NumberIcon,
+  PercentIcon,
+  SwapIcon,
+} from "../../../components/Icons";
 import { useMagic } from "../../../context/magicContext";
 import {
   ALL_COLLECTION_METADATA,
@@ -65,6 +72,7 @@ import type { GetServerSidePropsContext } from "next";
 import { useEthers } from "@usedapp/core";
 import { GridSizeToggle } from "../../../components/GridToggle";
 import { CollectionLinks } from "../../../components/CollectionLinks";
+import useLocalStorage from "use-local-storage-state";
 
 const MAX_ITEMS_PER_PAGE = 48;
 
@@ -188,7 +196,13 @@ const Collection = ({ og }: { og: MetadataProps }) => {
     isOpen: false,
     targetNft: null,
   });
-  const [floorCurrency, setFloorCurrency] = useState<"magic" | "eth">("magic");
+  const [floorCurrency, setFloorCurrency] = useLocalStorage<"magic" | "eth">(
+    "mp:floor-currency",
+    { defaultValue: "magic" }
+  );
+  const [listedDisplay, setListedDisplay] = useLocalStorage<
+    "number" | "percentage"
+  >("mp:listed-display", { defaultValue: "number" });
   const [gridSize] = useGridSizeState();
   const filters = getInititalFilters(formattedSearch);
   const { ethPrice } = useMagic();
@@ -1004,11 +1018,31 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                       )}
                   </div>
                   <div className="flex flex-col px-6 sm:px-8 py-4 md:pb-0 md:pt-8">
-                    <dt className="order-2 text-base font-medium text-gray-500 dark:text-gray-400 mt-4">
-                      Total Listings
+                    <dt className="order-2 text-base font-medium text-gray-500 dark:text-gray-400 mt-4 flex">
+                      <span className="capsize">Listed</span>
+                      <button
+                        className="inline-flex self-end items-center ml-2"
+                        onClick={() =>
+                          setListedDisplay((display) =>
+                            display === "number" ? "percentage" : "number"
+                          )
+                        }
+                      >
+                        <SwapIcon className="h-4 w-4" />
+                        {listedDisplay === "number" ? (
+                          <PercentIcon className="h-4 w-4" />
+                        ) : (
+                          <NumberIcon className="h-4 w-4" />
+                        )}
+                      </button>
                     </dt>
                     <dd className="order-1 font-extrabold text-red-600 dark:text-gray-200 text-3xl capsize">
-                      {formatNumber(statData.collection.stats.listings)}
+                      {listedDisplay === "number"
+                        ? formatNumber(statData.collection.stats.listings)
+                        : formatPercent(
+                            statData.collection.stats.listings /
+                              statData.collection.stats.items
+                          )}
                     </dd>
                   </div>
                   <div

@@ -39,8 +39,9 @@ export const formattable = (string: BigNumberish) => {
   return formatPrice(string);
 };
 
-export const formatPercent = (percentage: string) => {
-  const number = parseFloat(percentage);
+export const formatPercent = (percentage: string | number) => {
+  const number =
+    typeof percentage === "string" ? parseFloat(percentage) : percentage;
   return toFixed(number * 100, 2) + "%";
 };
 
