@@ -221,7 +221,9 @@ export function useFiltersList() {
   const isTreasure = collectionName === "Treasures";
   const isBattleflyItem = collectionName === "BattleFly";
   const isSmithoniaWeaponsItem = collectionName === "Smithonia Weapons";
-  const isSmolCars = collectionName === "Smol Cars";
+  const isLegacy = ["Smol Bodies", "Smol Brains", "Smol Cars"].includes(
+    collectionName
+  );
   const isShared = METADATA_COLLECTIONS.includes(collectionName);
   const isSmolverseItem = smolverseItems.includes(collectionName);
   const isInventory = router.pathname.startsWith("/inventory/");
@@ -234,7 +236,7 @@ export function useFiltersList() {
         id: formattedAddress,
       }),
     {
-      enabled: isSmolCars,
+      enabled: isLegacy,
       refetchInterval: false,
     }
   );

@@ -221,7 +221,9 @@ const Collection = ({ og }: { og: MetadataProps }) => {
   const isTreasure = collectionName === "Treasures";
   const isShared = METADATA_COLLECTIONS.includes(collectionName);
   const isRealm = collectionName === "Realm";
-  const isSmolCars = collectionName === "Smol Cars";
+  const isLegacy = ["Smol Bodies", "Smol Brains", "Smol Cars"].includes(
+    collectionName
+  );
   const isBattleflyItem = collectionName === "BattleFly";
   const isFoundersItem = collectionName.includes("Founders");
   const isSmithonia = collectionName === "Smithonia Weapons";
@@ -296,7 +298,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
       }),
     {
       enabled:
-        Boolean(listedTokens.data) && attributeIds.length > 0 && isSmolCars,
+        Boolean(listedTokens.data) && attributeIds.length > 0 && isLegacy,
       select: React.useCallback(
         ({
           metadataAttributes,
@@ -840,7 +842,7 @@ const Collection = ({ og }: { og: MetadataProps }) => {
     ["metadata", listingIds],
     () => client.getCollectionMetadata({ ids: listingIds }),
     {
-      enabled: listingIds.length > 0 && (isSmolCars || isTreasure),
+      enabled: listingIds.length > 0 && (isLegacy || isTreasure),
       refetchInterval: false,
       keepPreviousData: true,
     }
