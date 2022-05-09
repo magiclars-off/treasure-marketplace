@@ -8,6 +8,8 @@ type CollectionData = Record<
   "description" | "href" | "image" | "name",
   string
 > & {
+  imageContain?: boolean;
+  imageBgColor?: string;
   docs?: string;
   discord?: string;
   game?: string;
@@ -115,7 +117,7 @@ const BALANCER_CRYSTAL = {
   href: "balancer-crystal",
   name: "Balancer Crystal",
   image:
-    "https://ipfs.io/ipfs/QmZxhxnzWZbhYDiBeoqHgGyBKefPkHaFYa2hqFFyhfa99S/Balancer%20Crystal.gif",
+    "https://ipfs.io/ipfs/Qmd1hsvPDWrxtnfUna3pQyfmChyAkMenuziHS1gszM34P8/Balancer%20Crystal/1.jpg",
   description:
     "Exchange your SLP for one of these to further the fun in Bridgeworld and LIFE.",
   ...BRIDGEWORLD_DATA,
@@ -210,7 +212,9 @@ export const COLLECTION_METADATA = [
     href: "legion-genesis",
     name: "Legion Genesis",
     image:
-      "https://ipfs.io/ipfs/QmRqosGZZ6icx6uSDjLuFFMJiWDefZAiAZdpJdBK9BP5S4/Warlock.png",
+      "https://ipfs.io/ipfs/QmRXV7Pu2Y2CaeYGCSWJLKXnnRgDa3qndisPwGv9ZjQowt/Genesis/Rare/Shadowguard/4A.jpg",
+    imageContain: true,
+    imageBgColor: "#c80b00",
     description: "The Origin Legions of Bridgeworld with a fixed supply.",
     related: [
       "legion-auxiliary",
@@ -254,7 +258,9 @@ export const COLLECTION_METADATA = [
     href: "legion-auxiliary",
     name: "Legion Auxiliary",
     image:
-      "https://ipfs.io/ipfs/QmTxcMUqVvrHMrdLUqtSjFSbHZ4ZoQ2bUB6U7CEpA7JDiF/Uncommon Fighter.gif",
+      "https://ipfs.io/ipfs/QmRXV7Pu2Y2CaeYGCSWJLKXnnRgDa3qndisPwGv9ZjQowt/Auxiliary/Common/Fighter/2E.jpg",
+    imageContain: true,
+    imageBgColor: "#4bbdbd",
     description:
       "Descendants of Genesis Legions that can be summoned in Bridgeworld.",
     related: ["legion-genesis", "consumables", "treasures", "balancer-crystal"],
@@ -264,7 +270,7 @@ export const COLLECTION_METADATA = [
     href: "treasures",
     name: "Treasures",
     image:
-      "https://ipfs.io/ipfs/Qmbyy8EWMzrSTSGG1bDNsYZfvnkcjAFNM5TXJqvsbuY8Dz/Honeycomb.gif",
+      "https://ipfs.io/ipfs/Qmd1hsvPDWrxtnfUna3pQyfmChyAkMenuziHS1gszM34P8/Treasures/97.jpg",
     description:
       "Treasures are composable building blocks in Bridgeworld that will be used inter- and intra-metaverse.",
     ...BRIDGEWORLD_DATA,
@@ -279,7 +285,7 @@ export const COLLECTION_METADATA = [
     href: "consumables",
     name: "Consumables",
     image:
-      "https://ipfs.io/ipfs/QmdpMJMTRrGu1Z43RF94WnDRj5QwiLJXo43TwKWPX2cTWE/Medium Prism.gif",
+      "https://ipfs.io/ipfs/Qmd1hsvPDWrxtnfUna3pQyfmChyAkMenuziHS1gszM34P8/Consumables/3.jpg",
     description:
       "Functional items that are crafted from Treasures and give utility in the Metaverse.",
     ...BRIDGEWORLD_DATA,

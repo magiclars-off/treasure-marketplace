@@ -1,7 +1,8 @@
+import clsx from "clsx";
 import Image from "next/image";
+import Link from "next/link";
 
 import logoImg from "../../public/img/logotransparent.png";
-import Link from "next/link";
 import { Metadata } from "../components/Metadata";
 import { BATTLEFLY, COLLECTION_METADATA, TOADSTOOLZ } from "../const";
 
@@ -45,13 +46,21 @@ export default function Home() {
                   key={product.href}
                   className="group relative bg-white dark:bg-gray-500 border border-gray-200 dark:border-gray-600 rounded-lg flex flex-col overflow-hidden"
                 >
-                  <div className="relative aspect-none bg-gray-200 group-hover:opacity-75">
+                  <div
+                    className={clsx(
+                      "relative aspect-none group-hover:opacity-75",
+                      product.imageBgColor
+                        ? `bg-[${product.imageBgColor}]`
+                        : "bg-gray-200"
+                    )}
+                  >
                     <Image
                       src={product.image}
                       alt={product.name}
                       layout="responsive"
                       width={400}
                       height={400}
+                      objectFit={product.imageContain ? "contain" : "fill"}
                     />
                   </div>
                   <div className="flex-1 p-4 space-y-2 flex flex-col">
