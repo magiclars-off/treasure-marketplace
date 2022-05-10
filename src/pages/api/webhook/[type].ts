@@ -6,6 +6,10 @@ import { z } from "zod";
 import got from "got";
 
 const collectionWebhooks = {
+  realm: {
+    listWebhook: process.env.REALM_LIST_WEBHOOK,
+    soldWebhook: process.env.REALM_SOLD_WEBHOOK,
+  },
   "smithonia-weapons": {
     listWebhook: process.env.SMITHONIA_WEAPONS_LIST_WEBHOOK,
     soldWebhook: process.env.SMITHONIA_WEAPONS_SOLD_WEBHOOK,
