@@ -15,12 +15,12 @@ const collectionWebhooks = {
     soldWebhook: process.env.SMITHONIA_WEAPONS_SOLD_WEBHOOK,
   },
   "smol-bodies": {
-    listWebhook: process.env.SMOLBODIES_LIST_WEBHOOK,
-    soldWebhook: process.env.SMOLBODIES_SOLD_WEBHOOK,
+    listWebhook: process.env.SMOLBRAINS_LIST_WEBHOOK,
+    soldWebhook: process.env.SMOLBRAINS_SOLD_WEBHOOK,
   },
   "smol-bodies-pets": {
-    listWebhook: process.env.SMOLBODIES_LIST_WEBHOOK,
-    soldWebhook: process.env.SMOLBODIES_SOLD_WEBHOOK,
+    listWebhook: process.env.SMOLBRAINS_LIST_WEBHOOK,
+    soldWebhook: process.env.SMOLBRAINS_SOLD_WEBHOOK,
   },
   "smol-brains": {
     listWebhook: process.env.SMOLBRAINS_LIST_WEBHOOK,
@@ -39,6 +39,10 @@ const collectionWebhooks = {
     soldWebhook: process.env.SMOLBRAINS_SOLD_WEBHOOK,
   },
   "smol-brains-pets": {
+    listWebhook: process.env.SMOLBRAINS_LIST_WEBHOOK,
+    soldWebhook: process.env.SMOLBRAINS_SOLD_WEBHOOK,
+  },
+  swolercycles: {
     listWebhook: process.env.SMOLBRAINS_LIST_WEBHOOK,
     soldWebhook: process.env.SMOLBRAINS_SOLD_WEBHOOK,
   },

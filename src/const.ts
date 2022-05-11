@@ -206,6 +206,16 @@ const KOTE_SQUIRES = {
   website: "https://knightsoftheether.com",
 } as const;
 
+const SWOLERCYCLES = {
+  href: "swolercycles",
+  name: "Swolercycles",
+  image:
+    "https://ipfs.io/ipfs/QmUqm5andJ4u6HMTuvtMmhMKs6oskGceRgXruRnt19CNR4/1.png",
+  description: "Swols go vroom vroom.",
+  related: ["smol-bodies", "smol-bodies-pets", "smol-cars", "smol-treasures"],
+  website: "https://smolverse.lol",
+} as const;
+
 // Used for homepage and opengraph
 export const COLLECTION_METADATA = [
   {
@@ -302,7 +312,7 @@ export const COLLECTION_METADATA = [
     image: smolBodiesImg.src,
     description:
       "The Smol Bodies inhabit a gym near you, stacking $plates to earn muscle and be not smol.",
-    related: ["smol-bodies-pets", "smol-treasures"],
+    related: ["smol-bodies-pets", "swolercycles", "smol-treasures"],
     discord: "smolbrains",
     tools: "smol-bodies",
     twitter: "SmolBodies",
@@ -418,6 +428,7 @@ export const ALL_COLLECTION_METADATA = [
   UNPILGRIMAGED_LEGION_GENESIS,
   SAMURISE_LAND,
   KOTE_SQUIRES,
+  SWOLERCYCLES,
 ] as Array<CollectionData>;
 
 // Used on collection detail page
@@ -456,7 +467,7 @@ export const COLLECTION_DESCRIPTIONS = {
   "toadstoolz-itemz":
     "Toadstoolz is an on-chain toad life simulation NFT game. Toadz love to hunt for $BUGZ, go on adventures and are obsessed with collecting NFTs.",
   ...ALL_COLLECTION_METADATA.filter((item) =>
-    ["SamuRise Land", "KOTE Squires"].includes(item.name)
+    ["SamuRise Land", "KOTE Squires", "Swolercycles"].includes(item.name)
   ).reduce((acc, item) => {
     acc[item.href] = item.description;
 
