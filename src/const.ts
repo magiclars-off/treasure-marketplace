@@ -68,6 +68,15 @@ const BATTLEFLY_DATA = {
   website: "https://battlefly.game",
 } as const;
 
+const SMITHONIA_DATA = {
+  description:
+    "Smithonia is a SmithyDAO project. It's a world of staking and adventure which supports a hybrid economy where the primary objective of the game is to build the rarity of your weapon through gameplay.",
+  docs: "https://assets.smithydao.lol/SmithoniaWhitePaper.pdf",
+  discord: "smithydao",
+  twitter: "SmithyDAO",
+  website: "https://smithydao.lol",
+} as const;
+
 export const TOADSTOOLZ = {
   href: "toadstoolz",
   name: "Toadstoolz",
@@ -323,12 +332,8 @@ export const COLLECTION_METADATA = [
     name: "Smithonia Weapons",
     image:
       "https://ipfs.io/ipfs/bafkreibzmyesy7amoir273ckdcnpndkaz4b3ljdpc6lgexv2abzfnuieq4",
-    description:
-      "Smithonia is a SmithyDAO project. It's a world of staking and adventure which supports a hybrid economy where the primary objective of the game is to build the rarity of your weapon through gameplay.",
-    docs: "https://assets.smithydao.lol/SmithoniaWhitePaper.pdf",
-    discord: "smithydao",
-    twitter: "SmithyDAO",
-    website: "https://smithydao.lol",
+    ...SMITHONIA_DATA,
+    related: ["smithonia-resources"],
   },
   {
     href: "tales-of-elleria",
@@ -417,6 +422,14 @@ export const ALL_COLLECTION_METADATA = [
     related: ["toadstoolz"],
     tools: undefined,
   },
+  {
+    href: "smithonia-resources",
+    name: "Smithonia Resources",
+    image:
+      "https://ipfs.io/ipfs/bafkreiellqodl7qzr57fizmzxxtsuwx72tnatpkeniecjdpp2ld73ezwu4",
+    ...SMITHONIA_DATA,
+    related: ["smithonia-weapons"],
+  },
   EXTRA_LIFE,
   BALANCER_CRYSTAL,
   BATTLEFLY_FOUNDERS_V1,
@@ -503,12 +516,4 @@ export const BATTLEFLY_METADATA = {
       "https://ipfs.infura.io/ipfs/QmXsiziZsoYEz5sqz7rHCYdtuqaBPrpQbn7UnuUpcf2n6Z",
     attributes: [],
   },
-};
-
-export const SMITHONIA_WEAPONS_METADATA = {
-  name: "Smithonia Weapon",
-  description: "Smithonia Weapons",
-  image:
-    "https://bafkreibzmyesy7amoir273ckdcnpndkaz4b3ljdpc6lgexv2abzfnuieq4.ipfs.nftstorage.link/",
-  attributes: [],
 };
