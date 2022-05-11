@@ -42,6 +42,7 @@ export const smolverseItems = [
   "Smol Bodies Pets",
   "Smol Brains Pets",
   "Smol Treasures",
+  "Swolercycles",
 ];
 
 export const METADATA_COLLECTIONS = [
