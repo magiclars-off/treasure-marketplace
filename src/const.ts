@@ -2,6 +2,7 @@ import { ChainId } from "@usedapp/core";
 import smolBodiesImg from "../public/img/smolbodies.png";
 import toadstoolzImg from "../public/img/toadstoolz.jpg";
 import toadstoolzItemzImg from "../public/img/toadstoolz-itemz.svg";
+import theLostDonkeysImg from "../public/img/the-lost-donkeys.png";
 import peekabooImg from "../public/img/peekaboo.svg";
 import realmImg from "../public/img/realm.jpg";
 
@@ -55,8 +56,10 @@ export const smolverseItems = [
 export const METADATA_COLLECTIONS = [
   "KOTE Squires",
   "Peek-A-Boo",
+  "SamuRise Items",
   "SamuRise Land",
   "Tales of Elleria",
+  "The Lost Donkeys",
   "Toadstoolz",
   "Toadstoolz Itemz",
 ];
@@ -88,6 +91,16 @@ const SMITHONIA_DATA = {
   website: "https://smithydao.lol",
 } as const;
 
+const SAMURISE_DATA = {
+  description:
+    "The Lost SamuRise is a faction based strategy game played in the fictional world of Tengoku (heaven) that has borrowed lore and stylistic elements from Samurai culture in classical Japan.",
+  cartridge: "ecosystem",
+  discord: "samurise",
+  docs: "https://docs.samurise.xyz/docs/washipaper/prologue",
+  twitter: "SamuRiseNFT",
+  website: "https://samurise.xyz",
+} as const;
+
 export const TOADSTOOLZ = {
   href: "toadstoolz",
   name: "Toadstoolz",
@@ -102,6 +115,18 @@ export const TOADSTOOLZ = {
   tools: "toadstoolz",
   twitter: "toadstoolzNFT",
   website: "https://toadstoolz.lol",
+} as CollectionData;
+
+export const LOST_DONKEYS = {
+  href: "the-lost-donkeys",
+  name: "The Lost Donkeys",
+  image: theLostDonkeysImg.src,
+  description:
+    "The Lost Donkeys is a PFP & Gamefi project where barns will be built and donkeys will prevail. Train your donkey to become the farmer you’ve always wanted to be and harvest $Carrot. Your donkey is never gonna give you up, never gonna let you down!",
+  cartridge: "ecosystem",
+  discord: "TheLostDonkeys",
+  twitter: "TheLostDonkeys",
+  website: "https://thelostdonkeys.com",
 } as CollectionData;
 
 export const BATTLEFLY = {
@@ -211,17 +236,20 @@ const UNPILGRIMAGED_LEGION_GENESIS = {
     "Unpilgrimaged Legions need to undergo Pilgrimage to participate in Bridgeworld.",
 } as const;
 
+const SAMURISE_ITEMS = {
+  href: "samurise-items",
+  name: "SamuRise Items",
+  image: "https://storage.googleapis.com/samurise/items/katana.png",
+  related: ["samurise-land"],
+  ...SAMURISE_DATA,
+} as const;
+
 const SAMURISE_LAND = {
   href: "samurise-land",
   name: "SamuRise Land",
   image: "https://storage.googleapis.com/samurise/land/land.gif",
-  description:
-    "The Lost SamuRise is a faction based strategy game played in the fictional world of Tengoku (heaven) that has borrowed lore and stylistic elements from Samurai culture in classical Japan.",
-  cartridge: "ecosystem",
-  discord: "samurise",
-  docs: "https://docs.samurise.xyz/docs/washipaper/prologue",
-  twitter: "SamuRiseNFT",
-  website: "https://samurise.xyz",
+  related: ["samurise-items"],
+  ...SAMURISE_DATA,
 } as const;
 
 const KOTE_SQUIRES = {
@@ -461,6 +489,7 @@ export const ALL_COLLECTION_METADATA = [
   BATTLEFLY_FOUNDERS_V2,
   KOTE_SQUIRES,
   SAMURISE_LAND,
+  SAMURISE_ITEMS,
   ...COLLECTION_METADATA,
   {
     href: "smithonia-resources",
@@ -478,6 +507,7 @@ export const ALL_COLLECTION_METADATA = [
   UNPILGRIMAGED_LEGION_AUXILIARY,
   UNPILGRIMAGED_LEGION_GENESIS,
   SWOLERCYCLES,
+  LOST_DONKEYS,
 ] as Array<CollectionData>;
 
 // Used on collection detail page
@@ -507,8 +537,6 @@ export const COLLECTION_DESCRIPTIONS = {
     "Functional items that are crafted from Treasures and give utility in the Metaverse.",
   realm:
     "Realm is a decentralized world-building experience. Enjoy $MAGIC emissions and Loot from across the Metaverse.",
-  "smithonia-weapons":
-    "Smithonia is a SmithyDAO project. It's a world of staking and adventure which supports a hybrid economy where the primary objective of the game is to build the rarity of your weapon through gameplay.",
   "tales-of-elleria":
     "Tales of Elleria is an immersive three-dimensional role-playing GameFi project built on Arbitrum One. Summon heroes, take on assignments, go on quests and epic adventures to battle dangerous monsters earn tremendous rewards.",
   toadstoolz:
@@ -516,7 +544,15 @@ export const COLLECTION_DESCRIPTIONS = {
   "toadstoolz-itemz":
     "Toadstoolz is an on-chain toad life simulation NFT game. Toadz love to hunt for $BUGZ, go on adventures and are obsessed with collecting NFTs.",
   ...ALL_COLLECTION_METADATA.filter((item) =>
-    ["SamuRise Land", "KOTE Squires", "Swolercycles"].includes(item.name)
+    [
+      "SamuRise Items",
+      "SamuRise Land",
+      "Smithonia Resources",
+      "Smithonia Weapons",
+      "KOTE Squires",
+      "Swolercycles",
+      "The Lost Donkeys",
+    ].includes(item.name)
   ).reduce((acc, item) => {
     acc[item.href] = item.description;
 

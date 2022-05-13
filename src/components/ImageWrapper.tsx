@@ -20,24 +20,29 @@ export default function ImageWrapper({
   token,
   ...props
 }: ImageWrapperProps) {
+  const imageSource =
+    src ??
+    (token.metadata?.description === "Smol Brains Land"
+      ? generateIpfsLink(
+          "ipfs://QmUcEoYHwye65tsncGAtoz2bQLjQtrE2GiCa6L1PYNcbh7/0.png"
+        )
+      : token.metadata?.image.includes("ipfs")
+      ? generateIpfsLink(
+          token.metadata.image.replace(
+            "QmUqm5andJ4u6HMTuvtMmhMKs6oskGceRgXruRnt19CNR4",
+            "QmdbpWQ9tFdYQxjwktyYXNA86w8KG3vpbtmBWNrnzsdHyz"
+          )
+        )
+      : token.metadata?.image ?? "");
+
+  if (!imageSource) {
+    return null;
+  }
+
   return (
     <Image
       alt={token.name ?? ""}
-      src={
-        src ??
-        (token.metadata?.description === "Smol Brains Land"
-          ? generateIpfsLink(
-              "ipfs://QmUcEoYHwye65tsncGAtoz2bQLjQtrE2GiCa6L1PYNcbh7/0.png"
-            )
-          : token.metadata?.image.includes("ipfs")
-          ? generateIpfsLink(
-              token.metadata.image.replace(
-                "QmUqm5andJ4u6HMTuvtMmhMKs6oskGceRgXruRnt19CNR4",
-                "QmdbpWQ9tFdYQxjwktyYXNA86w8KG3vpbtmBWNrnzsdHyz"
-              )
-            )
-          : token.metadata?.image ?? "")
-      }
+      src={imageSource}
       objectFit="contain"
       layout={Boolean(props.width) ? undefined : "fill"}
       {...props}

@@ -432,12 +432,16 @@ export function Activity({ title }: ActivityProps) {
                   const fsMetadata = foundersMetadata.data?.find(
                     (item) => item.id === activity.token.id
                   );
-                  const srMetadata = smithoniaResourcesMetadata.data?.find(
-                    (item) => item.id === activity.token.tokenId
-                  );
-                  const swMetadata = smithoniaWeaponsMetadata.data?.find(
-                    (item) => item.id === activity.token.tokenId
-                  );
+                  const srMetadata = slugOrAddress.includes("resources")
+                    ? smithoniaResourcesMetadata.data?.find(
+                        (item) => item.id === activity.token.tokenId
+                      )
+                    : undefined;
+                  const swMetadata = slugOrAddress.includes("weapons")
+                    ? smithoniaWeaponsMetadata.data?.find(
+                        (item) => item.id === activity.token.tokenId
+                      )
+                    : undefined;
                   const shrdMetadata = sharedMetadata?.tokens.find(
                     (item) => item.id === activity.token.id
                   );
@@ -663,12 +667,16 @@ export function Activity({ title }: ActivityProps) {
               const fsMetadata = foundersMetadata.data?.find(
                 (item) => item.id === activity.token.id
               );
-              const srMetadata = smithoniaResourcesMetadata.data?.find(
-                (item) => item.id === activity.token.tokenId
-              );
-              const swMetadata = smithoniaWeaponsMetadata.data?.find(
-                (item) => item.id === activity.token.tokenId
-              );
+              const srMetadata = slugOrAddress.includes("resources")
+                ? smithoniaResourcesMetadata.data?.find(
+                    (item) => item.id === activity.token.tokenId
+                  )
+                : undefined;
+              const swMetadata = slugOrAddress.includes("weapons")
+                ? smithoniaWeaponsMetadata.data?.find(
+                    (item) => item.id === activity.token.tokenId
+                  )
+                : undefined;
               const shrdMetadata = sharedMetadata?.tokens.find(
                 (item) => item.id === activity.token.id
               );

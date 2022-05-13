@@ -1068,14 +1068,16 @@ const Inventory = ({ og }: { og: MetadataProps }) => {
                             const fsMetadata = foundersMetadata.data?.find(
                               (item) => item.id === token.id
                             );
-                            const srMetadata =
-                              smithoniaResourcesMetadata.data?.find(
-                                (item) => item.id === token.tokenId
-                              );
-                            const swMetadata =
-                              smithoniaWeaponsMetadata.data?.find(
-                                (item) => item.id === token.tokenId
-                              );
+                            const srMetadata = slug.includes("resources")
+                              ? smithoniaResourcesMetadata.data?.find(
+                                  (item) => item.id === token.tokenId
+                                )
+                              : undefined;
+                            const swMetadata = slug.includes("weapons")
+                              ? smithoniaWeaponsMetadata.data?.find(
+                                  (item) => item.id === token.tokenId
+                                )
+                              : undefined;
 
                             const metadata = bwMetadata
                               ? {
