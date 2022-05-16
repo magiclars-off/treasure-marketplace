@@ -49,6 +49,7 @@ export const BridgeworldItems = [
 export const smolverseItems = [
   "Smol Bodies Pets",
   "Smol Brains Pets",
+  "Smol Brains Land",
   "Smol Treasures",
   "Swolercycles",
 ];
