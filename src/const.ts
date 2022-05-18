@@ -271,7 +271,7 @@ const SWOLERCYCLES = {
   href: "swolercycles",
   name: "Swolercycles",
   image:
-    "https://ipfs.io/ipfs/QmUqm5andJ4u6HMTuvtMmhMKs6oskGceRgXruRnt19CNR4/1.png",
+    "https://ipfs.io/ipfs/QmUqm5andJ4u6HMTuvtMmhMKs6oskGceRgXruRnt19CNR4/3430.png",
   description: "Swols go vroom vroom.",
   cartridge: "smolverse",
   related: ["smol-bodies", "smol-bodies-pets", "smol-cars", "smol-treasures"],
