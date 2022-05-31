@@ -57,6 +57,9 @@ export const smolverseItems = [
 
 export const METADATA_COLLECTIONS = [
   "KOTE Squires",
+  "KOTE Potions",
+  "KOTE Trinkets",
+  "KOTE Rings",
   "Peek-A-Boo",
   "SamuRise Items",
   "SamuRise Land",
@@ -81,6 +84,14 @@ const BATTLEFLY_DATA = {
   discord: "YzpajBfRNX ",
   twitter: "BattleFlyGame",
   website: "https://battlefly.game",
+} as const;
+
+const KOTE_DATA = {
+  cartridge: "ecosystem",
+  discord: "kote",
+  game: "https://knightsoftheether.com/squires",
+  twitter: "KnightsOfTheEth",
+  website: "https://knightsoftheether.com",
 } as const;
 
 const SMITHONIA_DATA = {
@@ -270,11 +281,41 @@ const KOTE_SQUIRES = {
     "https://ipfs.io/ipfs/QmYZXbjHrKSoy5ZPutJPnnuZURr6NLbVpd323HZ3G3sX9D/strengthG.png",
   description:
     "The support characters for Knights of the Ether, these 3,999 Squires quest on Arbitrum in search of $FIEF, potions, trinkets and rings. Each Squire comes in 1 of 4 classes, Strength, Wisdom, Luck or Faith. (You must own at least 1 Knight on L1 to send Squires out on Quests)",
-  cartridge: "ecosystem",
-  discord: "kote",
-  game: "https://knightsoftheether.com/squires",
-  twitter: "KnightsOfTheEth",
-  website: "https://knightsoftheether.com",
+  ...KOTE_DATA,
+  related: ["kote-potions", "kote-trinkets", "kote-rings"],
+} as const;
+
+const KOTE_POTIONS = {
+  href: "kote-potions",
+  name: "KOTE Potions",
+  image:
+    "https://knightsoftheether.com/squires/images/potions/Phantom%20Phial.png",
+  description:
+    "1 of 3 item types in the Knights of the Ether ecosystem, Potions have 5 rarity tiers and 2 upgrade levels.",
+  ...KOTE_DATA,
+  related: ["kote-squires", "kote-trinkets", "kote-rings"],
+} as const;
+
+const KOTE_TRINKETS = {
+  href: "kote-trinkets",
+  name: "KOTE Trinkets",
+  image:
+    "https://knightsoftheether.com/squires/images/trinkets/Golem%20Eye.png",
+  description:
+    "1 of 3 item types in the Knights of the Ether ecosystem, Trinkets have 5 rarity tiers.",
+  ...KOTE_DATA,
+  related: ["kote-squires", "kote-potions", "kote-rings"],
+} as const;
+
+const KOTE_RINGS = {
+  href: "kote-rings",
+  name: "KOTE Rings",
+  image:
+    "https://knightsoftheether.com/squires/images/rings/Etheric%20Ring%20of%20Renewal.png",
+  description:
+    "1 of 3 item types in the Knights of the Ether ecosystem, Rings have 5 rarity tiers, 5 makes and 5 upgrade levels.",
+  ...KOTE_DATA,
+  related: ["kote-squires", "kote-potions", "kote-trinkets"],
 } as const;
 
 const SWOLERCYCLES = {
@@ -504,6 +545,9 @@ export const ALL_COLLECTION_METADATA = [
   BATTLEFLY_FOUNDERS_V1,
   BATTLEFLY_FOUNDERS_V2,
   KOTE_SQUIRES,
+  KOTE_POTIONS,
+  KOTE_RINGS,
+  KOTE_TRINKETS,
   SAMURISE_LAND,
   SAMURISE_ITEMS,
   ...COLLECTION_METADATA,
@@ -568,6 +612,9 @@ export const COLLECTION_DESCRIPTIONS = {
       "Smithonia Resources",
       "Smithonia Weapons",
       "KOTE Squires",
+      "KOTE Rings",
+      "KOTE Potions",
+      "KOTE Trinkets",
       "Swolercycles",
       "The Lost Donkeys",
     ].includes(item.name)
