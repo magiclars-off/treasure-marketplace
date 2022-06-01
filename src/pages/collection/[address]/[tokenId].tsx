@@ -65,6 +65,7 @@ import type { GetServerSidePropsContext } from "next";
 import {
   ALL_COLLECTION_METADATA,
   BridgeworldItems,
+  BUGGED_TELL_TOKEN_ID,
   METADATA_COLLECTIONS,
   smolverseItems,
 } from "../../../const";
@@ -514,7 +515,8 @@ export default function TokenDetails({ og }: { og: MetadataProps }) {
                     </div>
                   )}
 
-                {tokenInfo.lowestPrice?.length ? (
+                {tokenInfo.lowestPrice?.length &&
+                tokenInfo.id !== BUGGED_TELL_TOKEN_ID ? (
                   <>
                     <div className="mt-10">
                       <h2 className="sr-only">Price</h2>

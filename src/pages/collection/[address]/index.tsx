@@ -57,6 +57,7 @@ import { useMagic } from "../../../context/magicContext";
 import {
   ALL_COLLECTION_METADATA,
   BridgeworldItems,
+  BUGGED_TELL_TOKEN_ID,
   COLLECTION_DESCRIPTIONS,
   METADATA_COLLECTIONS,
   smolverseItems,
@@ -1519,6 +1520,10 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                           })}
                         {/* ERC721 */}
                         {group.listings?.map((listing) => {
+                          if (listing.token.id === BUGGED_TELL_TOKEN_ID) {
+                            return null;
+                          }
+
                           const bfMetadata = battleflyMetadata.data?.find(
                             (item) => item.id === listing.token.id
                           );

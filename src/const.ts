@@ -28,6 +28,9 @@ type CollectionData = Record<
   website?: string;
 };
 
+export const BUGGED_TELL_TOKEN_ID =
+  "0x7480224ec2b98f28cee3740c80940a2f489bf352-0x14fd";
+
 export const Contracts = {
   [ChainId.ArbitrumRinkeby]: {
     magic: "0x7693604341fDC5B73c920b8825518Ec9b6bBbb8b",
