@@ -467,6 +467,7 @@ export function useFiltersList() {
     isShared,
     isSmolverseItem,
     isSmithoniaWeaponsItem,
+    isTalesOfElleriaRelic,
     legacyAttributes.data?.collection?.attributes,
     smolverseAttributes.data?.attributes,
     sharedAttributes.data?.attributes,
