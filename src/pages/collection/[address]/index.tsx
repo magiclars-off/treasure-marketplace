@@ -555,12 +555,19 @@ const Collection = ({ og }: { og: MetadataProps }) => {
         isSmithonia,
       refetchInterval: false,
       select: React.useCallback(
-        (data: { items: number[] }) => {
-          const hexxed = data.items.map((id) => `0x${id.toString(16)}`);
+        (data) => {
+          const itemsToHex = (items: number[]) => {
+            const hexxed = items.map((id) => `0x${id.toString(16)}`);
+            return listedTokens.data?.filter((id) =>
+              hexxed.some((hex) => id.endsWith(hex))
+            );
+          };
 
-          return listedTokens.data?.filter((id) =>
-            hexxed.some((hex) => id.endsWith(hex))
-          );
+          if (Array.isArray(data)) {
+            return data.map((dataItem) => itemsToHex(dataItem.items)).flat();
+          } else {
+            return itemsToHex(data.items);
+          }
         },
         [listedTokens.data]
       ),
