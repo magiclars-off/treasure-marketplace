@@ -556,11 +556,11 @@ const Collection = ({ og }: { og: MetadataProps }) => {
       refetchInterval: false,
       select: React.useCallback(
         (data) => {
-          const itemsToHex = (items: number[]) => {
+          const itemsToHex = (items: number[]): string[] => {
             const hexxed = items.map((id) => `0x${id.toString(16)}`);
             return listedTokens.data?.filter((id) =>
               hexxed.some((hex) => id.endsWith(hex))
-            );
+            ) ?? [];
           };
 
           if (Array.isArray(data)) {
