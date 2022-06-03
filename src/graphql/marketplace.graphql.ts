@@ -31,9 +31,6 @@ export const getUserInventory = gql`
       staked(first: 1000) {
         id
         quantity
-        token {
-          ...TokenFields
-        }
       }
     }
   }

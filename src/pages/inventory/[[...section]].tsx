@@ -771,7 +771,8 @@ const Inventory = ({ og }: { og: MetadataProps }) => {
     // Filter out staked tokens until we have UI to handle it
     const filtered = tokens
       .filter(
-        (token) => !staked.some((stake) => stake.token.id === token.token.id)
+        (token) =>
+          !staked.some((stake) => stake.id.slice(43) === token.token.id)
       )
       .filter(({ token }) => collections.includes(token.collection.name));
 
