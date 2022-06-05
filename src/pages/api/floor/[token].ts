@@ -21,7 +21,7 @@ export default async function handler(
   }
 
   const { token } = z
-    .object({ token: z.string().regex(/^0x[0-9a-f]{40}-\d+$/) })
+    .object({ token: z.string().regex(/^0x[0-9a-f]{40}(-[012])?-\d+$/) })
     .parse(req.query);
 
   const [address, tokenId] = token.split("-");
