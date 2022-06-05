@@ -20,6 +20,8 @@ export default async function handler(
     return;
   }
 
+  res.setHeader("Cache-Control", "public, max-age=15, must-revalidate");
+
   const { token } = z
     .object({ token: z.string().regex(/^0x[0-9a-f]{40}(-[012])?-\d+$/) })
     .parse(req.query);

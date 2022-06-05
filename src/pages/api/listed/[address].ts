@@ -76,5 +76,6 @@ export default async function handler(
     .object({ address: z.string().regex(/^0x[0-9a-f]{40}(-[012])?$/) })
     .parse(req.query);
 
+  res.setHeader("Cache-Control", "public, max-age=15, must-revalidate");
   res.status(200).json(await getTokenIds(address));
 }
