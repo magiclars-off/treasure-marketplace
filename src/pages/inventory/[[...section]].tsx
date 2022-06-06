@@ -223,11 +223,22 @@ const Drawer = ({
   const floorPrice = useQuery(
     ["floor-price", nft.collectionId, nft.tokenId],
     () =>
-      fetch(`/api/floor/${nft.collectionId}-${nft.tokenId}`).then((res) =>
-        res.json()
-      ),
+      marketplace.getFloorPrice({
+        collection: nft.collectionId,
+        tokenId: nft.tokenId,
+      }),
     {
-      select: (data) => data.price ?? "0",
+      select: ({ collection }) => {
+        if (!collection) {
+          return "0";
+        }
+
+        return (
+          (collection.standard === TokenStandard.ERC1155
+            ? collection.tokens[0].floorPrice
+            : collection.floorPrice) ?? "0"
+        );
+      },
     }
   );
 

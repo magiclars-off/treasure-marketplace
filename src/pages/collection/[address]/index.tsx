@@ -57,7 +57,6 @@ import { useMagic } from "../../../context/magicContext";
 import {
   ALL_COLLECTION_METADATA,
   BridgeworldItems,
-  BUGGED_TELL_TOKEN_ID,
   COLLECTION_DESCRIPTIONS,
   METADATA_COLLECTIONS,
   smolverseItems,
@@ -284,9 +283,18 @@ const Collection = ({ og }: { og: MetadataProps }) => {
   // First get all possible listed tokens
   const listedTokens = useQuery(
     ["listed-tokens", formattedAddress],
-    () => fetch(`/api/listed/${formattedAddress}`).then((res) => res.json()),
+    () =>
+      marketplace.getCollectionsListedTokens({ collection: formattedAddress }),
     {
       enabled: !!formattedAddress,
+      select: React.useCallback(
+        (
+          data: Awaited<
+            ReturnType<typeof marketplace.getCollectionsListedTokens>
+          >
+        ) => unique(data.listings.map(({ token }) => token.id)),
+        []
+      ),
     }
   );
 
@@ -1173,17 +1181,13 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                               Number(
                                 parseFloat(
                                   formatEther(
-                                    listings.data?.pages?.[0].listings?.[0]
-                                      ?.pricePerItem ??
-                                      statData.collection.stats.floorPrice
+                                    statData.collection.stats.floorPrice
                                   )
                                 )
                               ) * parseFloat(ethPrice)
                             )
                           : formatPrice(
-                              listings.data?.pages?.[0].listings?.[0]
-                                ?.pricePerItem ??
-                                statData.collection.stats.floorPrice
+                              statData.collection.stats.floorPrice
                             )}{" "}
                       </span>
                     </dd>
@@ -1524,10 +1528,6 @@ const Collection = ({ og }: { og: MetadataProps }) => {
                           })}
                         {/* ERC721 */}
                         {group.listings?.map((listing) => {
-                          if (listing.token.id === BUGGED_TELL_TOKEN_ID) {
-                            return null;
-                          }
-
                           const bfMetadata = battleflyMetadata.data?.find(
                             (item) => item.id === listing.token.id
                           );
