@@ -3,7 +3,6 @@ import { Disclosure } from "@headlessui/react";
 import {
   ArrowLeftIcon,
   CurrencyDollarIcon,
-  ExternalLinkIcon,
   EyeOffIcon,
   FilterIcon,
   ShoppingCartIcon,
@@ -11,13 +10,7 @@ import {
 } from "@heroicons/react/solid";
 import { MinusSmIcon, PlusSmIcon } from "@heroicons/react/outline";
 import ImageWrapper from "../../../components/ImageWrapper";
-import {
-  Arbitrum,
-  shortenAddress,
-  shortenIfAddress,
-  useEthers,
-  addressEqual,
-} from "@usedapp/core";
+import { useEthers, addressEqual } from "@usedapp/core";
 import Link from "next/link";
 import { useInfiniteQuery, useQuery, useQueryClient } from "react-query";
 import { useRouter } from "next/router";
@@ -69,6 +62,7 @@ import {
   smolverseItems,
 } from "../../../const";
 import { CollectionLinks } from "../../../components/CollectionLinks";
+import AddressLink from "../../../components/AddressLink";
 
 const MAX_ITEMS_PER_PAGE = 10;
 
@@ -504,12 +498,14 @@ export default function TokenDetails({ og }: { og: MetadataProps }) {
                 {data.collection.standard === TokenStandard.ERC721 &&
                   tokenInfo.owners?.[0] &&
                   account && (
-                    <div className="mt-2 text-xs text-gray-400">
+                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
                       Owned by:{" "}
                       <span>
-                        {isYourListing
-                          ? "You"
-                          : shortenIfAddress(tokenInfo.owners[0].user.id)}
+                        {isYourListing ? (
+                          "You"
+                        ) : (
+                          <AddressLink address={tokenInfo.owners[0].user.id} />
+                        )}
                       </span>
                     </div>
                   )}
@@ -712,9 +708,9 @@ export default function TokenDetails({ og }: { og: MetadataProps }) {
                                               )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-700 hidden lg:table-cell">
-                                              {shortenAddress(
-                                                listing.seller.id
-                                              )}
+                                              <AddressLink
+                                                address={listing.seller.id}
+                                              />
                                             </td>
                                             {account ? (
                                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -922,21 +918,7 @@ export default function TokenDetails({ og }: { og: MetadataProps }) {
                                   Contract ID
                                 </dt>
                                 <dd className="mt-1">
-                                  <a
-                                    href={Arbitrum.getExplorerAddressLink(
-                                      formattedAddress.slice(0, 42)
-                                    )}
-                                    className="text-red-500 hover:text-red-700 dark:text-gray-200 dark:hover:text-gray-300 text-sm flex items-center space-x-1"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <p>
-                                      {shortenIfAddress(
-                                        formattedAddress.slice(0, 42)
-                                      )}
-                                    </p>
-                                    <ExternalLinkIcon className="h-4 w-4" />
-                                  </a>
+                                  <AddressLink address={formattedAddress} />
                                 </dd>
                               </div>
                               <div className="sm:col-span-1">
@@ -1131,9 +1113,13 @@ const timelineContent = (
   switch (listing.status) {
     case Status.Sold:
       return (
-        <p>
-          {shortenIfAddress(listing.seller.id)} sold to{" "}
-          {listing.buyer?.id ? shortenIfAddress(listing.buyer.id) : "Unknown"}{" "}
+        <p className="flex items-center gap-2">
+          <AddressLink address={listing.seller.id} /> sold to{" "}
+          {listing.buyer?.id ? (
+            <AddressLink address={listing.buyer.id} />
+          ) : (
+            "Unknown"
+          )}{" "}
           for{" "}
           <span className="font-medium text-gray-900 dark:text-gray-300">
             {formatPrice(listing.pricePerItem)}
@@ -1143,8 +1129,8 @@ const timelineContent = (
       );
     case Status.Active:
       return (
-        <p>
-          {shortenIfAddress(listing.seller.id)} listed this item for{" "}
+        <p className="flex items-center gap-2">
+          <AddressLink address={listing.seller.id} /> listed this item for{" "}
           <span className="font-medium text-gray-900 dark:text-gray-300">
             {formatPrice(listing.pricePerItem)}
           </span>{" "}
@@ -1153,9 +1139,9 @@ const timelineContent = (
       );
     case Status.Inactive:
       return (
-        <p>
-          {shortenIfAddress(listing.seller.id)} inactivated a listing of this
-          item
+        <p className="flex items-center gap-2">
+          <AddressLink address={listing.seller.id} /> inactivated a listing of
+          this item
         </p>
       );
   }

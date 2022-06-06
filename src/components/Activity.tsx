@@ -24,7 +24,7 @@ import {
   useSmithoniaWeaponsMetadata,
   useTalesOfElleriaRelicsMetadata,
 } from "../lib/hooks";
-import { shortenAddress, useEthers } from "@usedapp/core";
+import { useEthers } from "@usedapp/core";
 import { useRouter } from "next/router";
 import ImageWrapper from "./ImageWrapper";
 import { Disclosure } from "@headlessui/react";
@@ -47,6 +47,7 @@ import { SortMenu } from "./SortMenu";
 import { CenterLoadingDots } from "./CenterLoadingDots";
 import QueryLink from "./QueryLink";
 import classNames from "clsx";
+import AddressLink from "./AddressLink";
 
 const sortOptions = [
   {
@@ -619,12 +620,14 @@ export function Activity({ title }: ActivityProps) {
                         {activity.quantity}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-700">
-                        {shortenAddress(activity.seller.id)}
+                        <AddressLink address={activity.seller.id} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-700">
-                        {activity.buyer?.id
-                          ? shortenAddress(activity.buyer.id)
-                          : "--"}
+                        {activity.buyer?.id ? (
+                          <AddressLink address={activity.buyer.id} />
+                        ) : (
+                          "--"
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm dark:text-gray-700">
                         {status === "Listed" ? (
@@ -899,14 +902,18 @@ export function Activity({ title }: ActivityProps) {
                               <p className="text-xs dark:text-gray-500">
                                 From:
                               </p>
-                              <p>{shortenAddress(activity.seller.id)}</p>
+                              <p>
+                                <AddressLink address={activity.seller.id} />
+                              </p>
                             </div>
                             {activity.buyer?.id ? (
                               <div className="sm:px-8 space-y-1">
                                 <p className="text-xs dark:text-gray-500">
                                   To:
                                 </p>
-                                <p>{shortenAddress(activity.buyer.id)}</p>
+                                <p>
+                                  <AddressLink address={activity.buyer.id} />
+                                </p>
                               </div>
                             ) : null}
                             <div className="sm:pl-8 space-y-1">
