@@ -640,7 +640,7 @@ export function Activity({ title }: ActivityProps) {
                             target="_blank"
                           >
                             {time}
-                            <ExternalLinkIcon className="h-5 pl-2" />
+                            <ExternalLinkIcon className="h-4 pl-2" />
                           </a>
                         )}
                       </td>

@@ -11,7 +11,7 @@ export default function AddressLink(props: AddressLinkProps) {
   return (
     <a
       href={Arbitrum.getExplorerAddressLink(address)}
-      className="text-red-500 hover:text-red-700 dark:text-gray-200 dark:hover:text-gray-300 text-sm flex items-center space-x-1"
+      className="text-red-500 hover:text-red-700 text-sm flex items-center space-x-1"
       target="_blank"
       rel="noopener noreferrer"
     >
