@@ -541,7 +541,35 @@ const Header = () => {
               </div>
             </div>
           )}
+        <div className="bg-red-600">
+          <div className="py-3 px-3 sm:px-6 lg:px-8">
+            <div className="flex sm:items-center lg:justify-between flex-col space-y-2 sm:space-y-0 sm:flex-row">
+              <div className="flex-1 flex items-center">
+                <span className="flex p-2 rounded-lg bg-red-800">
+                  <SpeakerphoneIcon
+                    className="h-6 w-6 text-white"
+                    aria-hidden="true"
+                  />
+                </span>
+                <p className="ml-3 font-medium text-white">
+                  <span className="lg:hidden">
+                    There is an issue with floor price. Please double check
+                    before you confirm.
+                  </span>
+                  <span className="hidden lg:block">
+                    There is an issue with new listings not being added to the
+                    main collection page and the floor price not updating to
+                    show these listings. Please double check your purchases
+                    before you confirm. In the meantime new listings can be
+                    found in the activity tab. A fix is being worked on.
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
       <Modal
         title="Convert between ETH and MAGIC"
         onClose={() => setSushiModalOpen(false)}
